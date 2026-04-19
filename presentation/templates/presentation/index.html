@@ -51,7 +51,7 @@
                 >
                   <span
                     class="inline-flex h-6 items-center rounded-full bg-emerald-500/10 px-2 text-[11px] font-semibold text-emerald-300 ring-1 ring-emerald-500/40"
-                    >/api/usuarios/</span
+                    >/api/v1/usuarios/</span
                   >
                   <span>Crea usuarios</span>
                 </div>
@@ -60,7 +60,7 @@
                 >
                   <span
                     class="inline-flex h-6 items-center rounded-full bg-blue-500/10 px-2 text-[11px] font-semibold text-blue-300 ring-1 ring-blue-500/40"
-                    >/api/equipos/</span
+                    >/api/v1/equipos/</span
                   >
                   <span>Lista equipos disponibles</span>
                 </div>
@@ -69,7 +69,7 @@
                 >
                   <span
                     class="inline-flex h-6 items-center rounded-full bg-amber-500/10 px-2 text-[11px] font-semibold text-amber-300 ring-1 ring-amber-500/40"
-                    >/api/alquileres/</span
+                    >/api/v1/alquileres/</span
                   >
                   <span>Crea un alquiler validando fechas y disponibilidad</span>
                 </div>
@@ -78,7 +78,7 @@
                 >
                   <span
                     class="inline-flex h-6 items-center rounded-full bg-pink-500/10 px-2 text-[11px] font-semibold text-pink-300 ring-1 ring-pink-500/40"
-                    >/api/pagos/</span
+                    >/api/v2/pagos/</span
                   >
                   <span>Confirma el alquiler a través de la pasarela de pago</span>
                 </div>
@@ -305,8 +305,9 @@
               </h3>
               <p class="text-xs text-slate-400">
                 El pago confirma el alquiler cambiando su estado a
-                <code>PAGADO</code> mediante el <code>PagoService</code> y la
-                <code>PaymentGatewayFactory</code>.
+                <code>PAGADO</code>. Este paso se atiende en el microservicio
+                Flask (<span class="font-semibold text-emerald-300">Strangler</span>)
+                detrás de <code>/api/v2/pagos/</code>.
               </p>
               <form id="form-pago" class="space-y-3 text-sm">
                 <div class="grid grid-cols-2 gap-3">
@@ -383,7 +384,8 @@
     </div>
 
     <script>
-      const apiBase = "/api";
+      const apiV1 = "/api/v1";
+      const apiPagos = "/api/v2/pagos/";
 
       function showMessage(elementId, message, isError = false) {
         const el = document.getElementById(elementId);
@@ -415,7 +417,7 @@
           const nombre = document.getElementById("usuario-nombre").value;
           const email = document.getElementById("usuario-email").value;
           try {
-            const res = await fetch(`${apiBase}/usuarios/`, {
+            const res = await fetch(`${apiV1}/usuarios/`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ nombre, email }),
@@ -441,7 +443,7 @@
           container.innerHTML =
             '<p class="text-xs text-slate-400">Cargando equipos...</p>';
           try {
-            const res = await fetch(`${apiBase}/equipos/`);
+            const res = await fetch(`${apiV1}/equipos/`);
             const data = await parseJsonSafe(res);
             if (!res.ok) {
               throw new Error(data.detail || "Error al cargar equipos");
@@ -498,7 +500,7 @@
           const fecha_fin =
             document.getElementById("alquiler-fecha-fin").value;
           try {
-            const res = await fetch(`${apiBase}/alquileres/`, {
+            const res = await fetch(`${apiV1}/alquileres/`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
@@ -530,13 +532,11 @@
             document.getElementById("pago-alquiler-id").value,
             10,
           );
-          const monto = parseFloat(
-            document.getElementById("pago-monto").value,
-          );
+          const monto = document.getElementById("pago-monto").value;
           const metodo =
             document.getElementById("pago-metodo").value || "TARJETA";
           try {
-            const res = await fetch(`${apiBase}/pagos/`, {
+            const res = await fetch(apiPagos, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ alquiler_id, monto, metodo }),

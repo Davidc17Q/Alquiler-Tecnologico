@@ -9,7 +9,7 @@ SECRET_KEY = "django-insecure-techrent-placeholder-key"
 
 DEBUG = True
 
-ALLOWED_HOSTS: list[str] = []
+ALLOWED_HOSTS: list[str] = os.getenv("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,django").split(",")
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -59,10 +59,12 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
+_SQLITE_PATH = os.getenv("SQLITE_PATH", str(BASE_DIR / "db.sqlite3"))
+
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "NAME": _SQLITE_PATH,
     }
 }
 
