@@ -1,0 +1,116 @@
+<!-- Panel administrativo / vendedores -->
+<div id="admin-shell" class="hidden relative z-10 flex h-screen overflow-hidden">
+  <div id="admin-sidebar-overlay" class="sidebar-overlay fixed inset-0 z-40 bg-black/60 lg:hidden"></div>
+
+  <aside id="admin-sidebar" class="admin-sidebar fixed lg:static inset-y-0 left-0 z-50 flex flex-col border-r border-slate-800/80 bg-slate-950/98 backdrop-blur-xl -translate-x-full lg:translate-x-0 transition-transform">
+    <div class="p-4 border-b border-slate-800/80 flex items-center justify-between gap-2">
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="logo-glow h-10 w-10 rounded-xl bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center font-bold text-slate-950 text-xs shrink-0">AD</div>
+        <div class="admin-brand-text min-w-0">
+          <p class="font-semibold text-sm truncate">TechRent Ops</p>
+          <p class="text-[10px] text-purple-400 uppercase tracking-widest">Vendor Console</p>
+        </div>
+      </div>
+      <button type="button" id="admin-sidebar-collapse" class="hidden lg:flex p-1.5 rounded-lg hover:bg-slate-800 text-slate-500" aria-label="Colapsar">
+        <i data-lucide="panel-left" class="w-4 h-4"></i>
+      </button>
+    </div>
+
+    <nav class="flex-1 p-3 space-y-0.5 overflow-y-auto">
+      <a href="#" data-admin-section="admin-dashboard" class="admin-nav-link active"><i data-lucide="layout-dashboard" class="w-4 h-4 shrink-0"></i><span class="admin-nav-label">Dashboard</span></a>
+      <a href="#" data-admin-section="admin-analytics" class="admin-nav-link"><i data-lucide="bar-chart-3" class="w-4 h-4 shrink-0"></i><span class="admin-nav-label">Analytics</span></a>
+      <a href="#" data-admin-section="admin-clientes" class="admin-nav-link"><i data-lucide="users" class="w-4 h-4 shrink-0"></i><span class="admin-nav-label">Clientes</span></a>
+      <a href="#" data-admin-section="admin-equipos" class="admin-nav-link"><i data-lucide="package" class="w-4 h-4 shrink-0"></i><span class="admin-nav-label">Equipos</span></a>
+      <a href="#" data-admin-section="admin-alquileres" class="admin-nav-link"><i data-lucide="calendar-range" class="w-4 h-4 shrink-0"></i><span class="admin-nav-label">Alquileres</span></a>
+      <a href="#" data-admin-section="admin-infra" class="admin-nav-link"><i data-lucide="network" class="w-4 h-4 shrink-0"></i><span class="admin-nav-label">Microservicios</span></a>
+      <a href="#" data-admin-section="admin-workers" class="admin-nav-link"><i data-lucide="cpu" class="w-4 h-4 shrink-0"></i><span class="admin-nav-label">Workers</span></a>
+    </nav>
+
+    <div class="p-4 border-t border-slate-800/80 space-y-2">
+      <div class="admin-user-meta glass-card p-3">
+        <p class="text-[10px] text-slate-500 uppercase">Sesión</p>
+        <p id="admin-user-name" class="text-sm font-medium truncate">—</p>
+        <p id="admin-user-role" class="text-[10px] text-purple-400 font-mono">—</p>
+      </div>
+      <button type="button" id="admin-btn-logout" class="btn-ghost w-full py-2 text-xs text-slate-400 inline-flex items-center justify-center gap-2">
+        <i data-lucide="log-out" class="w-3.5 h-3.5"></i><span class="admin-nav-label">Salir</span>
+      </button>
+    </div>
+  </aside>
+
+  <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+    <header class="h-16 flex-shrink-0 border-b border-slate-800/80 bg-slate-950/90 backdrop-blur-xl flex items-center justify-between px-4 lg:px-8">
+      <div class="flex items-center gap-3">
+        <button type="button" id="admin-mobile-menu" class="lg:hidden p-2 rounded-lg hover:bg-slate-800 text-slate-400"><i data-lucide="menu" class="w-5 h-5"></i></button>
+        <div>
+          <h1 id="admin-page-title" class="text-lg font-semibold">Dashboard</h1>
+          <p class="text-xs text-slate-500">Panel operativo · arquitectura híbrida</p>
+        </div>
+      </div>
+      <span class="badge badge-online text-[10px]">Enterprise</span>
+    </header>
+
+    <main class="flex-1 overflow-y-auto p-4 lg:p-8 space-y-8">
+      <!-- Dashboard métricas -->
+      <section id="admin-section-dashboard" class="admin-section active space-y-6">
+        <div id="admin-metrics-grid" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
+          <p class="text-slate-500 col-span-full">Cargando métricas…</p>
+        </div>
+      </section>
+
+      <!-- Analytics -->
+      <section id="admin-section-analytics" class="admin-section space-y-6">
+        <div class="grid lg:grid-cols-2 gap-6">
+          <div class="chart-card"><h3 class="text-sm font-semibold mb-4">Ingresos por mes</h3><canvas id="chart-ingresos" height="200"></canvas></div>
+          <div class="chart-card"><h3 class="text-sm font-semibold mb-4">Alquileres por categoría</h3><canvas id="chart-categorias" height="200"></canvas></div>
+          <div class="chart-card"><h3 class="text-sm font-semibold mb-4">Equipos más alquilados</h3><canvas id="chart-top-equipos" height="200"></canvas></div>
+          <div class="chart-card"><h3 class="text-sm font-semibold mb-4">Actividad de usuarios</h3><canvas id="chart-actividad" height="200"></canvas></div>
+        </div>
+        <div class="chart-card"><h3 class="text-sm font-semibold mb-4">Estados del sistema (alquileres)</h3><canvas id="chart-estados" height="120"></canvas></div>
+      </section>
+
+      <!-- Clientes -->
+      <section id="admin-section-clientes" class="admin-section space-y-4">
+        <div class="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+          <input id="admin-clientes-buscar" type="search" placeholder="Buscar cliente…" class="flex-1 max-w-md px-4 py-2.5 rounded-xl bg-slate-900/80 border border-slate-800 text-sm" />
+          <button type="button" onclick="TechRentAdmin.loadClientes()" class="btn-ghost px-4 py-2 text-sm">Actualizar</button>
+        </div>
+        <div id="admin-clientes-list" class="admin-data-grid"></div>
+      </section>
+
+      <!-- Equipos -->
+      <section id="admin-section-equipos" class="admin-section space-y-4">
+        <div class="flex flex-wrap gap-2" id="admin-equipos-filtros"></div>
+        <div id="admin-equipos-grid" class="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"></div>
+      </section>
+
+      <!-- Alquileres -->
+      <section id="admin-section-alquileres" class="admin-section space-y-4">
+        <div class="flex flex-wrap gap-2">
+          <button type="button" data-alq-filter="activos" class="category-pill active">Activos</button>
+          <button type="button" data-alq-filter="pendientes" class="category-pill">Pendientes</button>
+          <button type="button" data-alq-filter="vencidos" class="category-pill">Vencidos</button>
+          <button type="button" data-alq-filter="finalizados" class="category-pill">Devueltos</button>
+        </div>
+        <div id="admin-alquileres-list" class="space-y-4"></div>
+      </section>
+
+      <!-- Infra -->
+      <section id="admin-section-infra" class="admin-section space-y-6">
+        <div class="infra-canvas-wrap" id="infra-diagram">
+          <p class="absolute inset-0 flex items-center justify-center text-slate-500 text-sm">Mapa de arquitectura</p>
+        </div>
+        <div id="admin-infra-grid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+      </section>
+
+      <!-- Workers -->
+      <section id="admin-section-workers" class="admin-section space-y-4">
+        <div class="grid lg:grid-cols-2 gap-6">
+          <div class="glass-card p-6"><h3 class="text-sm font-semibold mb-4">Colas Redis</h3><div id="admin-workers-queues"></div></div>
+          <div class="glass-card p-6"><h3 class="text-sm font-semibold mb-4">Tareas recientes</h3><div id="admin-workers-tasks"></div></div>
+        </div>
+        <div class="glass-card p-6"><h3 class="text-sm font-semibold mb-2">Logs</h3><pre id="admin-workers-logs" class="worker-log"></pre></div>
+      </section>
+    </main>
+  </div>
+</div>

@@ -117,14 +117,28 @@ function formatDate(iso) {
 
 // ─── Autenticación ────────────────────────────────────────────────────────
 
+function isStaffUser(user) {
+  return user && (user.rol === "VENDOR" || user.rol === "ADMIN");
+}
+
+async function routeAfterAuth(user) {
+  if (isStaffUser(user) && window.TechRentAdmin) {
+    window.TechRentAdmin.boot(user);
+    return;
+  }
+  await onSessionReady();
+}
+
 function showAuthGate() {
   document.getElementById("auth-gate")?.classList.remove("hidden");
   document.getElementById("app-shell")?.classList.add("hidden");
+  document.getElementById("admin-shell")?.classList.add("hidden");
 }
 
 function showAppShell() {
   document.getElementById("auth-gate")?.classList.add("hidden");
   document.getElementById("app-shell")?.classList.remove("hidden");
+  document.getElementById("admin-shell")?.classList.add("hidden");
 }
 
 function updateUserUI() {
@@ -209,7 +223,7 @@ function initAuthForms() {
       const data = await parseJsonSafe(res);
       if (!res.ok) throw new Error(data.detail || "No se pudo iniciar sesión");
       state.user = data;
-      await onSessionReady();
+      await routeAfterAuth(data);
       toast(`Bienvenido, ${data.nombre}`);
       e.target.reset();
     } catch (err) {
@@ -233,7 +247,7 @@ function initAuthForms() {
       const data = await parseJsonSafe(res);
       if (!res.ok) throw new Error(data.detail || "No se pudo registrar");
       state.user = data;
-      await onSessionReady();
+      await routeAfterAuth(data);
       toast(`Cuenta creada — hola, ${data.nombre}`);
       e.target.reset();
     } catch (err) {
@@ -254,6 +268,7 @@ function initLogout() {
     state.user = null;
     state.resumen = null;
     state.misAlquileres = [];
+    document.getElementById("admin-shell")?.classList.add("hidden");
     showAuthGate();
     toast("Sesión cerrada");
   });
@@ -281,7 +296,11 @@ async function initAuth() {
   showAuthGate();
   try {
     await fetchMe();
-    await onSessionReady();
+    if (isStaffUser(state.user)) {
+      await routeAfterAuth(state.user);
+    } else {
+      await onSessionReady();
+    }
   } catch {
     showAuthGate();
   }

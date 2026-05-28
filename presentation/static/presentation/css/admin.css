@@ -1,0 +1,252 @@
+/* TechRent — Panel administrativo / vendedores */
+
+#admin-shell {
+  --admin-accent: #22d3ee;
+  --admin-purple: #a78bfa;
+}
+
+#admin-shell .admin-sidebar {
+  width: 16rem;
+  transition: width 0.3s ease, transform 0.3s ease;
+}
+
+#admin-shell.sidebar-collapsed .admin-sidebar {
+  width: 4.5rem;
+}
+
+#admin-shell.sidebar-collapsed .admin-nav-label,
+#admin-shell.sidebar-collapsed .admin-brand-text,
+#admin-shell.sidebar-collapsed .admin-user-meta {
+  display: none;
+}
+
+#admin-sidebar.open {
+  transform: translateX(0);
+}
+
+.admin-metric-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1rem;
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  background: linear-gradient(145deg, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.55));
+  backdrop-filter: blur(12px);
+  padding: 1.25rem;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.admin-metric-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(34, 211, 238, 0.35);
+  box-shadow: 0 0 40px rgba(34, 211, 238, 0.12), 0 20px 40px rgba(0, 0, 0, 0.35);
+}
+
+.admin-metric-card::before {
+  content: "";
+  position: absolute;
+  inset: -50% -50% auto auto;
+  width: 120px;
+  height: 120px;
+  background: radial-gradient(circle, rgba(34, 211, 238, 0.15), transparent 70%);
+  pointer-events: none;
+}
+
+.admin-metric-value {
+  font-size: 1.875rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.admin-growth-up {
+  color: #34d399;
+}
+.admin-growth-down {
+  color: #f87171;
+}
+
+.admin-sparkline {
+  height: 36px;
+  width: 100%;
+  margin-top: 0.75rem;
+  opacity: 0.85;
+}
+
+.admin-section {
+  display: none;
+}
+.admin-section.active {
+  display: block;
+  animation: adminFadeIn 0.35s ease;
+}
+
+@keyframes adminFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.admin-data-grid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.admin-client-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  gap: 1rem;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(51, 65, 85, 0.5);
+  background: rgba(15, 23, 42, 0.6);
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.admin-client-row:hover {
+  background: rgba(30, 41, 59, 0.8);
+  border-color: rgba(34, 211, 238, 0.2);
+}
+
+.admin-equipo-card {
+  border-radius: 1rem;
+  border: 1px solid rgba(51, 65, 85, 0.6);
+  background: linear-gradient(160deg, rgba(15, 23, 42, 0.95), rgba(30, 27, 75, 0.25));
+  overflow: hidden;
+  transition: transform 0.25s, box-shadow 0.25s;
+}
+
+.admin-equipo-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+}
+
+.admin-equipo-thumb {
+  height: 100px;
+  background: linear-gradient(135deg, rgba(34, 211, 238, 0.2), rgba(167, 139, 250, 0.25));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-timeline {
+  position: relative;
+  padding-left: 1.5rem;
+  border-left: 2px solid rgba(34, 211, 238, 0.25);
+}
+
+.admin-timeline-item {
+  position: relative;
+  padding-bottom: 1.25rem;
+}
+
+.admin-timeline-item::before {
+  content: "";
+  position: absolute;
+  left: -1.65rem;
+  top: 0.35rem;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--admin-accent);
+  box-shadow: 0 0 12px rgba(34, 211, 238, 0.6);
+}
+
+.infra-node {
+  border-radius: 1rem;
+  border: 1px solid rgba(51, 65, 85, 0.7);
+  padding: 1.25rem;
+  background: rgba(15, 23, 42, 0.85);
+  position: relative;
+  overflow: hidden;
+}
+
+.infra-node.online {
+  border-color: rgba(52, 211, 153, 0.4);
+  box-shadow: 0 0 30px rgba(52, 211, 153, 0.08);
+}
+
+.infra-node.offline {
+  border-color: rgba(248, 113, 113, 0.35);
+}
+
+.infra-pulse {
+  animation: infraPulse 2s ease-in-out infinite;
+}
+
+@keyframes infraPulse {
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.infra-canvas-wrap {
+  min-height: 280px;
+  border-radius: 1rem;
+  border: 1px dashed rgba(51, 65, 85, 0.8);
+  background: rgba(3, 7, 18, 0.6);
+  position: relative;
+}
+
+.worker-log {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  line-height: 1.6;
+  color: #94a3b8;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.skeleton-admin {
+  background: linear-gradient(
+    90deg,
+    rgba(30, 41, 59, 0.5) 25%,
+    rgba(51, 65, 85, 0.6) 50%,
+    rgba(30, 41, 59, 0.5) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.2s infinite;
+  border-radius: 0.5rem;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.chart-card {
+  border-radius: 1rem;
+  border: 1px solid rgba(51, 65, 85, 0.5);
+  background: rgba(15, 23, 42, 0.7);
+  padding: 1.25rem;
+}
+
+.admin-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  color: #94a3b8;
+  transition: background 0.2s, color 0.2s;
+}
+
+.admin-nav-link:hover,
+.admin-nav-link.active {
+  background: rgba(34, 211, 238, 0.1);
+  color: #67e8f9;
+}

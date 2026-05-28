@@ -27,6 +27,7 @@
     </script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <link rel="stylesheet" href="{% static 'presentation/css/app.css' %}" />
+    <link rel="stylesheet" href="{% static 'presentation/css/admin.css' %}" />
     {% block extra_head %}{% endblock %}
   </head>
   <body class="h-full antialiased">
@@ -63,9 +64,13 @@
     </div>
     </div>
 
+    {% include "components/admin_shell.html" %}
+
     <div id="toast-container" class="toast-container"></div>
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="{% static 'presentation/js/app.js' %}"></script>
+    <script src="{% static 'presentation/js/admin.js' %}"></script>
     {% block extra_js %}{% endblock %}
   </body>
 </html>

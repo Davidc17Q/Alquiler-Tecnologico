@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from decimal import Decimal
 
 from django.core.management.base import BaseCommand
 
-from domain.enums import EquipoEstado
-from infrastructure.models import EquipoModel
+from domain.enums import EquipoEstado, RolUsuario
+from infrastructure.models import EquipoModel, UsuarioModel
 
 # Catálogo base inicial
 EQUIPOS_CATALOGO: list[dict] = [
@@ -328,3 +329,18 @@ class Command(BaseCommand):
                 f"Total en BD: {EquipoModel.objects.count()}."
             )
         )
+
+        staff = [
+            ("Vendedor TechRent", "vendor@techrent.com", RolUsuario.VENDOR),
+            ("Admin TechRent", "admin@techrent.com", RolUsuario.ADMIN),
+        ]
+        for nombre, email, rol in staff:
+            if not UsuarioModel.objects.filter(email=email).exists():
+                UsuarioModel.objects.create(
+                    nombre=nombre,
+                    email=email,
+                    fecha_registro=datetime.now(timezone.utc),
+                    rol=rol.value,
+                    activo=True,
+                )
+                self.stdout.write(self.style.SUCCESS(f"Usuario staff: {email} ({rol.value})"))
