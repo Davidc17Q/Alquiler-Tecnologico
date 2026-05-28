@@ -22,7 +22,7 @@ def equipo_to_dict(equipo: Equipo) -> Dict[str, Any]:
         "id": equipo.id,
         "nombre": equipo.nombre,
         "categoria": equipo.categoria,
-        "precio_por_dia": equipo.precio_por_dia,
+        "precio_por_dia": str(equipo.precio_por_dia),
         "estado": equipo.estado.value,
     }
 
@@ -36,8 +36,17 @@ def alquiler_to_dict(alquiler: Alquiler) -> Dict[str, Any]:
         "fecha_inicio": alquiler.fecha_inicio,
         "fecha_fin": alquiler.fecha_fin,
         "estado": alquiler.estado.value,
-        "costo_total": alquiler.costo_total,
+        "costo_total": str(alquiler.costo_total),
     }
+
+
+def alquiler_detalle_to_dict(alquiler: Alquiler) -> Dict[str, Any]:
+    """DTO enriquecido para el panel del cliente."""
+    data = alquiler_to_dict(alquiler)
+    data["equipo_nombre"] = alquiler.equipo.nombre
+    data["equipo_categoria"] = alquiler.equipo.categoria
+    data["usuario_nombre"] = alquiler.usuario.nombre
+    return data
 
 
 def pago_to_dict(pago: Pago) -> Dict[str, Any]:

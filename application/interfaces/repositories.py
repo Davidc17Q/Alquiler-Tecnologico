@@ -22,6 +22,14 @@ class UsuarioRepository(ABC):
     def create(self, usuario: Usuario) -> Usuario:
         raise NotImplementedError
 
+    @abstractmethod
+    def get_by_email(self, email: str) -> Usuario | None:
+        raise NotImplementedError
+
+    @abstractmethod
+    def exists_by_email(self, email: str) -> bool:
+        raise NotImplementedError
+
 
 class EquipoRepository(ABC):
     """Puerto de persistencia para equipos."""
@@ -32,6 +40,11 @@ class EquipoRepository(ABC):
 
     @abstractmethod
     def list_all(self) -> Sequence[Equipo]:
+        raise NotImplementedError
+
+    @abstractmethod
+    def count_all(self) -> int:
+        """Total de equipos registrados en el sistema."""
         raise NotImplementedError
 
 
@@ -61,6 +74,16 @@ class AlquilerRepository(ABC):
         """Indica si ya existe un alquiler que se solape con el rango
         de fechas indicado para el equipo dado.
         """
+        raise NotImplementedError
+
+    @abstractmethod
+    def count_activos(self) -> int:
+        """Cuenta alquileres en estado pendiente o pagado (aún activos)."""
+        raise NotImplementedError
+
+    @abstractmethod
+    def list_by_usuario_id(self, usuario_id: int) -> Sequence[Alquiler]:
+        """Lista todos los alquileres de un usuario, más recientes primero."""
         raise NotImplementedError
 
 

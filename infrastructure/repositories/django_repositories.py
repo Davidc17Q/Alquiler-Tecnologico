@@ -93,6 +93,16 @@ class DjangoUsuarioRepository(UsuarioRepository):
         )
         return _map_usuario_model_to_entity(model)
 
+    def get_by_email(self, email: str) -> Usuario | None:
+        try:
+            model = UsuarioModel.objects.get(email__iexact=email.strip())
+        except UsuarioModel.DoesNotExist:
+            return None
+        return _map_usuario_model_to_entity(model)
+
+    def exists_by_email(self, email: str) -> bool:
+        return UsuarioModel.objects.filter(email__iexact=email.strip()).exists()
+
 
 class DjangoEquipoRepository(EquipoRepository):
     def get_by_id(self, equipo_id: int) -> Equipo | None:
@@ -104,6 +114,9 @@ class DjangoEquipoRepository(EquipoRepository):
 
     def list_all(self):
         return [_map_equipo_model_to_entity(e) for e in EquipoModel.objects.all()]
+
+    def count_all(self) -> int:
+        return EquipoModel.objects.count()
 
 
 class DjangoAlquilerRepository(AlquilerRepository):
@@ -145,6 +158,18 @@ class DjangoAlquilerRepository(AlquilerRepository):
             fecha_inicio__lt=fecha_fin,
             fecha_fin__gt=fecha_inicio,
         ).exists()
+
+    def count_activos(self) -> int:
+        estados_activos = [AlquilerEstado.PENDIENTE.value, AlquilerEstado.PAGADO.value]
+        return AlquilerModel.objects.filter(estado__in=estados_activos).count()
+
+    def list_by_usuario_id(self, usuario_id: int):
+        qs = (
+            AlquilerModel.objects.filter(usuario_id=usuario_id)
+            .select_related("usuario", "equipo")
+            .order_by("-fecha_inicio", "-id")
+        )
+        return [_map_alquiler_model_to_entity(m) for m in qs]
 
 
 class DjangoPagoRepository(PagoRepository):

@@ -26,3 +26,7 @@ class ValidationError(ApplicationError):
     pero inválidos a nivel de reglas de negocio (ej. fechas incoherentes).
     """
 
+
+class AuthenticationError(ApplicationError):
+    """Se lanza cuando la petición requiere sesión y no está autenticada."""
+

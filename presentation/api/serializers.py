@@ -10,6 +10,10 @@ class UsuarioCreateSerializer(serializers.Serializer):
     email = serializers.EmailField()
 
 
+class AuthLoginSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+
 class EquipoSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)
     nombre = serializers.CharField()
@@ -19,7 +23,7 @@ class EquipoSerializer(serializers.Serializer):
 
 
 class AlquilerCreateSerializer(serializers.Serializer):
-    usuario_id = serializers.IntegerField()
+    usuario_id = serializers.IntegerField(required=False, allow_null=True)
     equipo_id = serializers.IntegerField()
     fecha_inicio = serializers.DateField()
     fecha_fin = serializers.DateField()

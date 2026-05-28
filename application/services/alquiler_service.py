@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 from datetime import date
+from typing import Sequence
+
+from django.utils.translation import gettext_lazy as _
 
 from application.exceptions import BusinessRuleViolation, ConflictError, NotFoundError, ValidationError
 from application.interfaces.repositories import AlquilerRepository, EquipoRepository, UsuarioRepository
@@ -40,22 +43,24 @@ class AlquilerService:
         fecha_fin: date,
     ) -> Alquiler:
         if fecha_inicio >= fecha_fin:
-            raise ValidationError("La fecha de fin debe ser posterior a la fecha de inicio.")
+            raise ValidationError(_("La fecha de fin debe ser posterior a la fecha de inicio."))
 
         usuario = self._usuarios.get_by_id(usuario_id)
         if usuario is None:
-            raise NotFoundError("Usuario no encontrado.")
+            raise NotFoundError(_("Usuario no encontrado."))
 
         equipo = self._equipos.get_by_id(equipo_id)
         if equipo is None:
-            raise NotFoundError("Equipo no encontrado.")
+            raise NotFoundError(_("Equipo no encontrado."))
 
         if self._alquileres.exists_overlapping_for_equipo(
             equipo_id=equipo_id,
             fecha_inicio=fecha_inicio,
             fecha_fin=fecha_fin,
         ):
-            raise ConflictError("El equipo no está disponible en el rango de fechas solicitado.")
+            raise ConflictError(
+                _("El equipo no está disponible en el rango de fechas solicitado.")
+            )
 
         builder = AlquilerBuilder()
         try:
@@ -71,13 +76,18 @@ class AlquilerService:
 
         return self._alquileres.create(alquiler)
 
+    def listar_por_usuario(self, usuario_id: int) -> Sequence[Alquiler]:
+        if self._usuarios.get_by_id(usuario_id) is None:
+            raise NotFoundError(_("Usuario no encontrado."))
+        return self._alquileres.list_by_usuario_id(usuario_id)
+
     def marcar_como_pagado(self, alquiler_id: int) -> Alquiler:
         alquiler = self._alquileres.get_by_id(alquiler_id)
         if alquiler is None:
-            raise NotFoundError("Alquiler no encontrado.")
+            raise NotFoundError(_("Alquiler no encontrado."))
 
         if alquiler.estado != AlquilerEstado.PENDIENTE:
-            raise ConflictError("Solo se pueden marcar como pagados alquileres pendientes.")
+            raise ConflictError(_("Solo se pueden marcar como pagados alquileres pendientes."))
 
         alquiler.estado = AlquilerEstado.PAGADO
         return self._alquileres.save(alquiler)
@@ -85,10 +95,10 @@ class AlquilerService:
     def finalizar_alquiler(self, alquiler_id: int) -> Alquiler:
         alquiler = self._alquileres.get_by_id(alquiler_id)
         if alquiler is None:
-            raise NotFoundError("Alquiler no encontrado.")
+            raise NotFoundError(_("Alquiler no encontrado."))
 
         if alquiler.estado != AlquilerEstado.PAGADO:
-            raise ConflictError("Solo se pueden finalizar alquileres pagados.")
+            raise ConflictError(_("Solo se pueden finalizar alquileres pagados."))
 
         alquiler.estado = AlquilerEstado.FINALIZADO
         return self._alquileres.save(alquiler)
