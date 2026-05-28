@@ -84,37 +84,7 @@ docker compose exec django python manage.py seed_techrent --append
 
 Abre **http://localhost** en el navegador. El login detecta el rol y muestra el panel de **cliente** o el de **vendedor/admin**.
 
-### Cuentas de prueba (tras `seed_techrent`)
 
-| Rol | Correo | Panel |
-|-----|--------|--------|
-| Cliente | Registro libre en la UI | Catálogo y alquileres |
-| Vendedor | `vendor@techrent.com` | TechRent Ops (admin) |
-| Admin | `admin@techrent.com` | TechRent Ops (admin) |
-
-El inicio de sesión es por **correo electrónico** (sin contraseña en el modelo actual).
-
-## Desarrollo local (sin Docker)
-
-```bash
-python -m venv .venv
-.venv\Scripts\activate          # Windows
-# source .venv/bin/activate     # Linux/macOS
-
-pip install -r requirements.txt
-cp .env.example .env
-# En .env para local: DATABASE_URL=sqlite:///db.sqlite3
-
-python manage.py migrate
-python manage.py seed_techrent --append
-python manage.py runserver
-```
-
-Visita http://127.0.0.1:8000. Los microservicios y Nginx requieren Docker para el flujo completo híbrido.
-
-## API principal
-
-Todas las rutas del monolito usan prefijo **`/api/v1/`** (sesión con cookie; el frontend envía `credentials: 'include'`).
 
 ### Autenticación
 
@@ -189,11 +159,3 @@ docker compose exec django python manage.py shell
 curl -X POST http://localhost/api/tareas/demo/ -H "Content-Type: application/json" -d "{}"
 ```
 
-## Internacionalización
-
-Traducciones en `locale/es` y `locale/en`. Configuración en `config/settings.py` (`LANGUAGE_CODE`, `LANGUAGES`).
-
-## Licencia y autoría
-
-Proyecto académico — Arquitectura de Software.  
-Repositorio: [Davidc17Q/Alquiler-Tecnologico](https://github.com/Davidc17Q/Alquiler-Tecnologico)
