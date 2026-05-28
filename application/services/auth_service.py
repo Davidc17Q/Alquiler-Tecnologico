@@ -11,9 +11,10 @@ from datetime import datetime, timezone
 
 from django.utils.translation import gettext_lazy as _
 
-from application.exceptions import ConflictError, NotFoundError
+from application.exceptions import AuthenticationError, ConflictError, NotFoundError
 from application.interfaces.repositories import UsuarioRepository
 from domain.entities.usuario import Usuario
+from domain.enums import RolUsuario
 
 
 class AuthService:
@@ -31,6 +32,8 @@ class AuthService:
             nombre=nombre.strip(),
             email=email_normalizado,
             fecha_registro=datetime.now(timezone.utc),
+            rol=RolUsuario.CLIENTE,
+            activo=True,
         )
         return self._usuarios.create(usuario)
 
@@ -39,6 +42,8 @@ class AuthService:
         usuario = self._usuarios.get_by_email(email_normalizado)
         if usuario is None:
             raise NotFoundError(_("No hay cuenta con ese correo. Regístrate primero."))
+        if not usuario.activo:
+            raise AuthenticationError(_("Tu cuenta está bloqueada. Contacta al soporte."))
         return usuario
 
     def obtener_usuario(self, usuario_id: int) -> Usuario:

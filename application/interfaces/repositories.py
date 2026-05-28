@@ -30,6 +30,23 @@ class UsuarioRepository(ABC):
     def exists_by_email(self, email: str) -> bool:
         raise NotImplementedError
 
+    @abstractmethod
+    def list_all(self) -> Sequence[Usuario]:
+        raise NotImplementedError
+
+    @abstractmethod
+    def save(self, usuario: Usuario) -> Usuario:
+        raise NotImplementedError
+
+    @abstractmethod
+    def count_all(self) -> int:
+        raise NotImplementedError
+
+    @abstractmethod
+    def count_clientes_activos(self) -> int:
+        """Clientes con al menos un alquiler en los últimos 90 días."""
+        raise NotImplementedError
+
 
 class EquipoRepository(ABC):
     """Puerto de persistencia para equipos."""
@@ -45,6 +62,19 @@ class EquipoRepository(ABC):
     @abstractmethod
     def count_all(self) -> int:
         """Total de equipos registrados en el sistema."""
+        raise NotImplementedError
+
+    @abstractmethod
+    def save(self, equipo: Equipo) -> Equipo:
+        raise NotImplementedError
+
+    @abstractmethod
+    def delete_by_id(self, equipo_id: int) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    def count_alquilados_ahora(self) -> int:
+        """Equipos con al menos un alquiler activo (pendiente o pagado)."""
         raise NotImplementedError
 
 
@@ -86,6 +116,30 @@ class AlquilerRepository(ABC):
         """Lista todos los alquileres de un usuario, más recientes primero."""
         raise NotImplementedError
 
+    @abstractmethod
+    def list_all(self) -> Sequence[Alquiler]:
+        raise NotImplementedError
+
+    @abstractmethod
+    def count_pendientes(self) -> int:
+        raise NotImplementedError
+
+    @abstractmethod
+    def ingresos_por_mes(self, meses: int = 6) -> Sequence[dict]:
+        raise NotImplementedError
+
+    @abstractmethod
+    def alquileres_por_categoria(self) -> Sequence[dict]:
+        raise NotImplementedError
+
+    @abstractmethod
+    def equipos_mas_alquilados(self, limite: int = 8) -> Sequence[dict]:
+        raise NotImplementedError
+
+    @abstractmethod
+    def actividad_usuarios_por_mes(self, meses: int = 6) -> Sequence[dict]:
+        raise NotImplementedError
+
 
 class PagoRepository(ABC):
     """Puerto de persistencia para pagos."""
@@ -100,6 +154,22 @@ class PagoRepository(ABC):
 
     @abstractmethod
     def save(self, pago: Pago) -> Pago:
+        raise NotImplementedError
+
+    @abstractmethod
+    def count_pendientes(self) -> int:
+        raise NotImplementedError
+
+    @abstractmethod
+    def ingresos_mes_actual(self) -> float:
+        raise NotImplementedError
+
+    @abstractmethod
+    def ingresos_mes_anterior(self) -> float:
+        raise NotImplementedError
+
+    @abstractmethod
+    def list_by_usuario_id(self, usuario_id: int) -> Sequence[Pago]:
         raise NotImplementedError
 
 

@@ -1,6 +1,11 @@
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, timedelta
+from decimal import Decimal
+
+from django.db.models import Count, Sum
+from django.db.models.functions import TruncMonth
+from django.utils import timezone
 
 from application.interfaces.repositories import (
     AlquilerRepository,
@@ -14,7 +19,7 @@ from domain.entities.equipo import Equipo
 from domain.entities.pago import Pago
 from domain.entities.penalizacion import Penalizacion
 from domain.entities.usuario import Usuario
-from domain.enums import AlquilerEstado, EquipoEstado, MetodoPago, PagoEstado
+from domain.enums import AlquilerEstado, EquipoEstado, MetodoPago, PagoEstado, RolUsuario
 from infrastructure.models import (
     AlquilerModel,
     EquipoModel,
@@ -30,6 +35,8 @@ def _map_usuario_model_to_entity(model: UsuarioModel) -> Usuario:
         nombre=model.nombre,
         email=model.email,
         fecha_registro=model.fecha_registro,
+        rol=RolUsuario(model.rol),
+        activo=model.activo,
     )
 
 
@@ -90,8 +97,34 @@ class DjangoUsuarioRepository(UsuarioRepository):
             nombre=usuario.nombre,
             email=usuario.email,
             fecha_registro=usuario.fecha_registro,
+            rol=usuario.rol.value,
+            activo=usuario.activo,
         )
         return _map_usuario_model_to_entity(model)
+
+    def list_all(self):
+        return [_map_usuario_model_to_entity(m) for m in UsuarioModel.objects.order_by("-fecha_registro")]
+
+    def save(self, usuario: Usuario) -> Usuario:
+        model = UsuarioModel.objects.get(pk=usuario.id)
+        model.nombre = usuario.nombre
+        model.email = usuario.email
+        model.rol = usuario.rol.value
+        model.activo = usuario.activo
+        model.save(update_fields=["nombre", "email", "rol", "activo"])
+        return _map_usuario_model_to_entity(model)
+
+    def count_all(self) -> int:
+        return UsuarioModel.objects.count()
+
+    def count_clientes_activos(self) -> int:
+        desde = timezone.now() - timedelta(days=90)
+        return (
+            UsuarioModel.objects.filter(rol=RolUsuario.CLIENTE.value)
+            .filter(alquileres__fecha_inicio__gte=desde.date())
+            .distinct()
+            .count()
+        )
 
     def get_by_email(self, email: str) -> Usuario | None:
         try:
@@ -117,6 +150,35 @@ class DjangoEquipoRepository(EquipoRepository):
 
     def count_all(self) -> int:
         return EquipoModel.objects.count()
+
+    def save(self, equipo: Equipo) -> Equipo:
+        if equipo.id:
+            model = EquipoModel.objects.get(pk=equipo.id)
+            model.nombre = equipo.nombre
+            model.categoria = equipo.categoria
+            model.precio_por_dia = equipo.precio_por_dia
+            model.estado = equipo.estado.value
+            model.save(update_fields=["nombre", "categoria", "precio_por_dia", "estado"])
+        else:
+            model = EquipoModel.objects.create(
+                nombre=equipo.nombre,
+                categoria=equipo.categoria,
+                precio_por_dia=equipo.precio_por_dia,
+                estado=equipo.estado.value,
+            )
+        return _map_equipo_model_to_entity(model)
+
+    def delete_by_id(self, equipo_id: int) -> None:
+        EquipoModel.objects.filter(pk=equipo_id).delete()
+
+    def count_alquilados_ahora(self) -> int:
+        estados = [AlquilerEstado.PENDIENTE.value, AlquilerEstado.PAGADO.value]
+        return (
+            AlquilerModel.objects.filter(estado__in=estados)
+            .values("equipo_id")
+            .distinct()
+            .count()
+        )
 
 
 class DjangoAlquilerRepository(AlquilerRepository):
@@ -171,6 +233,62 @@ class DjangoAlquilerRepository(AlquilerRepository):
         )
         return [_map_alquiler_model_to_entity(m) for m in qs]
 
+    def list_all(self):
+        qs = AlquilerModel.objects.select_related("usuario", "equipo").order_by("-fecha_inicio", "-id")
+        return [_map_alquiler_model_to_entity(m) for m in qs]
+
+    def count_pendientes(self) -> int:
+        return AlquilerModel.objects.filter(estado=AlquilerEstado.PENDIENTE.value).count()
+
+    def ingresos_por_mes(self, meses: int = 6):
+        desde = timezone.now() - timedelta(days=meses * 31)
+        qs = (
+            PagoModel.objects.filter(
+                estado="CONFIRMADO",
+                fecha_pago__gte=desde,
+            )
+            .annotate(mes=TruncMonth("fecha_pago"))
+            .values("mes")
+            .annotate(total=Sum("monto"))
+            .order_by("mes")
+        )
+        return [{"mes": row["mes"].strftime("%Y-%m"), "total": float(row["total"] or 0)} for row in qs]
+
+    def alquileres_por_categoria(self):
+        qs = (
+            AlquilerModel.objects.values("equipo__categoria")
+            .annotate(total=Count("id"))
+            .order_by("-total")[:12]
+        )
+        return [{"categoria": row["equipo__categoria"], "total": row["total"]} for row in qs]
+
+    def equipos_mas_alquilados(self, limite: int = 8):
+        qs = (
+            AlquilerModel.objects.values("equipo__id", "equipo__nombre", "equipo__categoria")
+            .annotate(total=Count("id"))
+            .order_by("-total")[:limite]
+        )
+        return [
+            {
+                "equipo_id": row["equipo__id"],
+                "nombre": row["equipo__nombre"],
+                "categoria": row["equipo__categoria"],
+                "total": row["total"],
+            }
+            for row in qs
+        ]
+
+    def actividad_usuarios_por_mes(self, meses: int = 6):
+        desde = timezone.now() - timedelta(days=meses * 31)
+        qs = (
+            AlquilerModel.objects.filter(fecha_inicio__gte=desde.date())
+            .annotate(mes=TruncMonth("fecha_inicio"))
+            .values("mes")
+            .annotate(usuarios=Count("usuario_id", distinct=True))
+            .order_by("mes")
+        )
+        return [{"mes": row["mes"].strftime("%Y-%m"), "usuarios": row["usuarios"]} for row in qs]
+
 
 class DjangoPagoRepository(PagoRepository):
     def get_by_id(self, pago_id: int) -> Pago | None:
@@ -202,6 +320,36 @@ class DjangoPagoRepository(PagoRepository):
         model.save(update_fields=["estado", "monto"])
         alquiler_entity = _map_alquiler_model_to_entity(model.alquiler)
         return _map_pago_model_to_entity(model, alquiler_entity=alquiler_entity)
+
+    def count_pendientes(self) -> int:
+        return PagoModel.objects.filter(estado=PagoEstado.PENDIENTE.value).count()
+
+    def ingresos_mes_actual(self) -> float:
+        ahora = timezone.now()
+        inicio = ahora.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        total = PagoModel.objects.filter(
+            fecha_pago__gte=inicio,
+            estado=PagoEstado.CONFIRMADO.value,
+        ).aggregate(s=Sum("monto"))["s"]
+        return float(total or 0)
+
+    def ingresos_mes_anterior(self) -> float:
+        ahora = timezone.now()
+        inicio_actual = ahora.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        fin_anterior = inicio_actual - timedelta(days=1)
+        inicio_anterior = fin_anterior.replace(day=1)
+        total = PagoModel.objects.filter(
+            fecha_pago__gte=inicio_anterior,
+            fecha_pago__lt=inicio_actual,
+            estado=PagoEstado.CONFIRMADO.value,
+        ).aggregate(s=Sum("monto"))["s"]
+        return float(total or 0)
+
+    def list_by_usuario_id(self, usuario_id: int):
+        qs = PagoModel.objects.filter(alquiler__usuario_id=usuario_id).select_related(
+            "alquiler", "alquiler__usuario", "alquiler__equipo"
+        )
+        return [_map_pago_model_to_entity(m) for m in qs]
 
 
 class DjangoPenalizacionRepository(PenalizacionRepository):
