@@ -12,4 +12,5 @@ class HomeView(TemplateView):
     """
 
     template_name = "presentation/index.html"
+    # El dashboard consume únicamente la API REST; sin lógica de negocio en la vista.
 
