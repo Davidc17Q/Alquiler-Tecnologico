@@ -30,3 +30,7 @@ class ValidationError(ApplicationError):
 class AuthenticationError(ApplicationError):
     """Se lanza cuando la petición requiere sesión y no está autenticada."""
 
+
+class ForbiddenError(ApplicationError):
+    """Se lanza cuando el usuario no tiene permisos para la acción."""
+

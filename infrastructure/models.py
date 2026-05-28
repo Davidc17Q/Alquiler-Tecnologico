@@ -2,13 +2,19 @@ from __future__ import annotations
 
 from django.db import models
 
-from domain.enums import AlquilerEstado, EquipoEstado, MetodoPago, PagoEstado
+from domain.enums import AlquilerEstado, EquipoEstado, MetodoPago, PagoEstado, RolUsuario
 
 
 class UsuarioModel(models.Model):
     nombre = models.CharField(max_length=150)
     email = models.EmailField(unique=True)
     fecha_registro = models.DateTimeField()
+    rol = models.CharField(
+        max_length=20,
+        choices=[(r.value, r.value) for r in RolUsuario],
+        default=RolUsuario.CLIENTE.value,
+    )
+    activo = models.BooleanField(default=True)
 
     class Meta:
         db_table = "usuario"

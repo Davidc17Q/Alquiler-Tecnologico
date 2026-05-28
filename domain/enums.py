@@ -3,9 +3,16 @@ from __future__ import annotations
 from enum import Enum
 
 
+class RolUsuario(str, Enum):
+    CLIENTE = "CLIENTE"
+    VENDOR = "VENDOR"
+    ADMIN = "ADMIN"
+
+
 class EquipoEstado(str, Enum):
     DISPONIBLE = "DISPONIBLE"
     NO_DISPONIBLE = "NO_DISPONIBLE"
+    MANTENIMIENTO = "MANTENIMIENTO"
 
 
 class AlquilerEstado(str, Enum):
