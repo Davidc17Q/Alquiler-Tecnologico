@@ -3,13 +3,22 @@ from __future__ import annotations
 from pathlib import Path
 import os
 
+from dotenv import load_dotenv
+
+# Carga variables desde .env (desarrollo local y Docker Compose)
+load_dotenv()
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = "django-insecure-techrent-placeholder-key"
+SECRET_KEY = os.environ.get("SECRET_KEY", "django-insecure-cambiar-en-produccion")
 
-DEBUG = True
+DEBUG = os.environ.get("DEBUG", "True").lower() in ("true", "1", "yes")
 
-ALLOWED_HOSTS: list[str] = os.getenv("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,django").split(",")
+ALLOWED_HOSTS: list[str] = [
+    host.strip()
+    for host in os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1,django,nginx").split(",")
+    if host.strip()
+]
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -28,6 +37,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -40,8 +50,6 @@ ROOT_URLCONF = "config.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        # Se incluye explícitamente el directorio de templates del proyecto
-        # además de los templates de cada app (APP_DIRS=True).
         "DIRS": [
             BASE_DIR / "presentation" / "templates",
         ],
@@ -59,7 +67,14 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
-_SQLITE_PATH = os.getenv("SQLITE_PATH", str(BASE_DIR / "db.sqlite3"))
+# Base de datos: DATABASE_URL sqlite o ruta explícita SQLITE_PATH
+_database_url = os.environ.get("DATABASE_URL", "").strip()
+if _database_url.startswith("sqlite:////"):
+    _SQLITE_PATH = _database_url.replace("sqlite:////", "/", 1)
+elif _database_url.startswith("sqlite:///"):
+    _SQLITE_PATH = _database_url.replace("sqlite:///", "", 1)
+else:
+    _SQLITE_PATH = os.environ.get("SQLITE_PATH", str(BASE_DIR / "db.sqlite3"))
 
 DATABASES = {
     "default": {
@@ -70,7 +85,19 @@ DATABASES = {
 
 AUTH_PASSWORD_VALIDATORS: list[dict[str, str]] = []
 
-LANGUAGE_CODE = "es-es"
+# ---------------------------------------------------------------------------
+# Internacionalización (i18n)
+# ---------------------------------------------------------------------------
+LANGUAGE_CODE = "es"
+
+LANGUAGES = [
+    ("es", "Español"),
+    ("en", "English"),
+]
+
+LOCALE_PATHS = [
+    BASE_DIR / "locale",
+]
 
 TIME_ZONE = "UTC"
 
@@ -80,31 +107,51 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 
+STATICFILES_DIRS = [
+    BASE_DIR / "presentation" / "static",
+]
+
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# ---------------------------------------------------------------------------
+# Sesión del cliente (dashboard web)
+# ---------------------------------------------------------------------------
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = "Lax"
+SESSION_SAVE_EVERY_REQUEST = True
+
+# ---------------------------------------------------------------------------
+# Celery + Redis
+# ---------------------------------------------------------------------------
+REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
+
+CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL", REDIS_URL)
+CELERY_RESULT_BACKEND = os.environ.get("CELERY_RESULT_BACKEND", REDIS_URL)
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_TIMEZONE = TIME_ZONE
+
+# ---------------------------------------------------------------------------
+# Adaptador de moneda externa
+# ---------------------------------------------------------------------------
+EXCHANGE_RATE_TIMEOUT = float(os.environ.get("EXCHANGE_RATE_TIMEOUT", "10"))
+PRECIO_USD_DEFAULT = float(os.environ.get("PRECIO_USD_DEFAULT", "50"))
 
 # ---------------------------------------------------------------------------
 # Configuración de pasarela de pagos
 # ---------------------------------------------------------------------------
-# Este flag permite seleccionar dinámicamente la implementación de pasarela
-# de pagos concreta sin acoplar la capa de aplicación a detalles de
-# infraestructura. La Factory leerá este valor para decidir qué instancia
-# concreta construir. Esto ilustra el Principio de Inversión de Dependencias.
-PAYMENT_GATEWAY_BACKEND = os.getenv("PAYMENT_GATEWAY_BACKEND", "fake")
+PAYMENT_GATEWAY_BACKEND = os.environ.get("PAYMENT_GATEWAY_BACKEND", "fake")
 
 # ---------------------------------------------------------------------------
 # Configuración de notificaciones (email real)
 # ---------------------------------------------------------------------------
-# Para enviar correos reales configuramos el backend SMTP estándar de Django.
-# Las credenciales se leen desde variables de entorno para no acoplar
-# el código a datos sensibles.
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-EMAIL_HOST = os.getenv("EMAIL_HOST", "smtp.gmail.com")
-EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
-EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
-EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
+EMAIL_HOST = os.environ.get("EMAIL_HOST", "smtp.gmail.com")
+EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
 EMAIL_USE_TLS = True
-DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "no-reply@techrent.local")
+DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "no-reply@techrent.local")
 
-# La pasarela de notificaciones usará email por defecto.
-NOTIFICATION_GATEWAY_BACKEND = os.getenv("NOTIFICATION_GATEWAY_BACKEND", "email")
-
+NOTIFICATION_GATEWAY_BACKEND = os.environ.get("NOTIFICATION_GATEWAY_BACKEND", "email")
