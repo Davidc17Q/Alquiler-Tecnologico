@@ -17,7 +17,7 @@ from application.exceptions import (
     NotFoundError,
     ValidationError,
 )
-from presentation.api.auth_views import _handle_auth_error, _requiere_sesion
+from presentation.api.session_auth import handle_auth_error, requiere_sesion
 from application.services.alquiler_service import AlquilerService
 from application.services.currency_conversion_service import CurrencyConversionService
 from application.services.equipo_service import EquipoService
@@ -110,9 +110,9 @@ class EquipoListView(APIView):
 class AlquilerCreateView(APIView):
     def post(self, request: HttpRequest) -> Response:
         try:
-            usuario_id = _requiere_sesion(request)
+            usuario_id = requiere_sesion(request)
         except AuthenticationError as exc:
-            return _handle_auth_error(exc)
+            return handle_auth_error(exc)
 
         serializer = AlquilerCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -137,9 +137,9 @@ class MisAlquileresView(APIView):
 
     def get(self, request: HttpRequest) -> Response:
         try:
-            usuario_id = _requiere_sesion(request)
+            usuario_id = requiere_sesion(request)
         except AuthenticationError as exc:
-            return _handle_auth_error(exc)
+            return handle_auth_error(exc)
 
         service = _build_alquiler_service()
         try:

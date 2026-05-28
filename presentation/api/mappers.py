@@ -12,7 +12,21 @@ from domain.entities.usuario import Usuario
 def usuario_to_dict(usuario: Usuario) -> Dict[str, Any]:
     """Mapea la entidad de dominio Usuario a un DTO plano."""
     data = asdict(usuario)
-    data["fecha_registro"] = usuario.fecha_registro
+    data["fecha_registro"] = usuario.fecha_registro.isoformat()
+    data["rol"] = usuario.rol.value
+    data["activo"] = usuario.activo
+    return data
+
+
+def usuario_admin_to_dict(
+    usuario: Usuario,
+    *,
+    total_alquileres: int = 0,
+    ultimo_alquiler: str | None = None,
+) -> Dict[str, Any]:
+    data = usuario_to_dict(usuario)
+    data["total_alquileres"] = total_alquileres
+    data["ultimo_alquiler"] = ultimo_alquiler
     return data
 
 
