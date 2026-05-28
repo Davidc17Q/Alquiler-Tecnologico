@@ -1,0 +1,86 @@
+# English translations — Alquiler Tecnológico
+msgid ""
+msgstr ""
+"Project-Id-Version: Alquiler-Tecnologico 1.0\n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "Alquiler Tecnológico"
+msgstr "Tech Rental"
+
+msgid "Equipo no encontrado."
+msgstr "Equipment not found."
+
+msgid "El parámetro precio_usd debe ser numérico."
+msgstr "The precio_usd parameter must be numeric."
+
+msgid "No fue posible obtener la tasa de cambio."
+msgstr "Could not retrieve the exchange rate."
+
+msgid "Alquiler confirmado"
+msgstr "Rental confirmed"
+
+msgid "Tareas encoladas correctamente."
+msgstr "Tasks queued successfully."
+
+msgid "Reporte de alquileres generado correctamente."
+msgstr "Rental report generated successfully."
+
+msgid "Notificación enviada al usuario %(usuario_id)s: %(mensaje)s"
+msgstr "Notification sent to user %(usuario_id)s: %(mensaje)s"
+
+msgid "Inicio"
+msgstr "Home"
+
+msgid "Equipos"
+msgstr "Equipment"
+
+msgid "Alquileres"
+msgstr "Rentals"
+
+msgid "Usuarios"
+msgstr "Users"
+
+msgid "Registrar usuario"
+msgstr "Register user"
+
+msgid "Listar equipos"
+msgstr "List equipment"
+
+msgid "Crear alquiler"
+msgstr "Create rental"
+
+msgid "Operación exitosa"
+msgstr "Operation successful"
+
+msgid "Error en la solicitud"
+msgstr "Request error"
+
+msgid "Nombre"
+msgstr "Name"
+
+msgid "Correo electrónico"
+msgstr "Email"
+
+msgid "Categoría"
+msgstr "Category"
+
+msgid "Precio por día"
+msgstr "Price per day"
+
+msgid "Estado"
+msgstr "Status"
+
+msgid "Fecha de inicio"
+msgstr "Start date"
+
+msgid "Fecha de fin"
+msgstr "End date"
+
+msgid "Costo total"
+msgstr "Total cost"
+
+msgid "Bienvenido a la plataforma de alquiler tecnológico"
+msgstr "Welcome to the tech rental platform"

@@ -1,0 +1,86 @@
+# Traducciones al español — Alquiler Tecnológico
+msgid ""
+msgstr ""
+"Project-Id-Version: Alquiler-Tecnologico 1.0\n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "Alquiler Tecnológico"
+msgstr "Alquiler Tecnológico"
+
+msgid "Equipo no encontrado."
+msgstr "Equipo no encontrado."
+
+msgid "El parámetro precio_usd debe ser numérico."
+msgstr "El parámetro precio_usd debe ser numérico."
+
+msgid "No fue posible obtener la tasa de cambio."
+msgstr "No fue posible obtener la tasa de cambio."
+
+msgid "Alquiler confirmado"
+msgstr "Alquiler confirmado"
+
+msgid "Tareas encoladas correctamente."
+msgstr "Tareas encoladas correctamente."
+
+msgid "Reporte de alquileres generado correctamente."
+msgstr "Reporte de alquileres generado correctamente."
+
+msgid "Notificación enviada al usuario %(usuario_id)s: %(mensaje)s"
+msgstr "Notificación enviada al usuario %(usuario_id)s: %(mensaje)s"
+
+msgid "Inicio"
+msgstr "Inicio"
+
+msgid "Equipos"
+msgstr "Equipos"
+
+msgid "Alquileres"
+msgstr "Alquileres"
+
+msgid "Usuarios"
+msgstr "Usuarios"
+
+msgid "Registrar usuario"
+msgstr "Registrar usuario"
+
+msgid "Listar equipos"
+msgstr "Listar equipos"
+
+msgid "Crear alquiler"
+msgstr "Crear alquiler"
+
+msgid "Operación exitosa"
+msgstr "Operación exitosa"
+
+msgid "Error en la solicitud"
+msgstr "Error en la solicitud"
+
+msgid "Nombre"
+msgstr "Nombre"
+
+msgid "Correo electrónico"
+msgstr "Correo electrónico"
+
+msgid "Categoría"
+msgstr "Categoría"
+
+msgid "Precio por día"
+msgstr "Precio por día"
+
+msgid "Estado"
+msgstr "Estado"
+
+msgid "Fecha de inicio"
+msgstr "Fecha de inicio"
+
+msgid "Fecha de fin"
+msgstr "Fecha de fin"
+
+msgid "Costo total"
+msgstr "Costo total"
+
+msgid "Bienvenido a la plataforma de alquiler tecnológico"
+msgstr "Bienvenido a la plataforma de alquiler tecnológico"
