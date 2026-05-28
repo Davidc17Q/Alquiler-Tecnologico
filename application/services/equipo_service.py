@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Sequence
 
+from django.utils.translation import gettext_lazy as _
+
 from application.exceptions import NotFoundError
 from application.interfaces.repositories import EquipoRepository
 from domain.entities.equipo import Equipo
@@ -24,6 +26,6 @@ class EquipoService:
     def obtener_equipo(self, equipo_id: int) -> Equipo:
         equipo = self._equipos.get_by_id(equipo_id)
         if equipo is None:
-            raise NotFoundError("Equipo no encontrado.")
+            raise NotFoundError(_("Equipo no encontrado."))
         return equipo
 
