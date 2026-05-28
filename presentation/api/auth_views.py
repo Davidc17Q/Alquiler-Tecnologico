@@ -1,6 +1,4 @@
-"""
-Vistas de autenticación por sesión Django — capa de presentación.
-"""
+"""Vistas de autenticación por sesión Django — capa de presentación."""
 
 from __future__ import annotations
 
@@ -12,20 +10,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from application.exceptions import ApplicationError
-from application.services.auth_service import AuthService
-from domain.enums import AlquilerEstado
-from infrastructure.repositories.django_repositories import (
-    DjangoAlquilerRepository,
-    DjangoUsuarioRepository,
-)
 from presentation.api.mappers import usuario_to_dict
 from presentation.api.serializers import AuthLoginSerializer, UsuarioCreateSerializer
-from presentation.api.session_auth import (
-    build_auth_service,
-    establecer_sesion,
-    handle_auth_error,
-    requiere_sesion,
-)
+from presentation.api.session_auth import establecer_sesion, handle_auth_error, requiere_sesion
+from presentation.di import build_auth_service, build_cliente_resumen_service
 
 
 @method_decorator(csrf_exempt, name="dispatch")
@@ -38,6 +26,7 @@ class AuthRegistroView(APIView):
             usuario = service.registrar(
                 nombre=serializer.validated_data["nombre"],
                 email=serializer.validated_data["email"],
+                password=serializer.validated_data["password"],
             )
         except ApplicationError as exc:
             return handle_auth_error(exc)
@@ -52,7 +41,10 @@ class AuthLoginView(APIView):
         serializer.is_valid(raise_exception=True)
         service = build_auth_service()
         try:
-            usuario = service.iniciar_sesion(email=serializer.validated_data["email"])
+            usuario = service.iniciar_sesion(
+                email=serializer.validated_data["email"],
+                password=serializer.validated_data["password"],
+            )
         except ApplicationError as exc:
             return handle_auth_error(exc)
         establecer_sesion(request, usuario.id)
@@ -75,33 +67,14 @@ class AuthMeView(APIView):
             usuario_id = requiere_sesion(request)
         except ApplicationError as exc:
             return handle_auth_error(exc)
-        service = build_auth_service()
+        auth = build_auth_service()
+        resumen_svc = build_cliente_resumen_service()
         try:
-            usuario = service.obtener_usuario(usuario_id)
+            usuario = auth.obtener_usuario(usuario_id)
+            resumen = resumen_svc.obtener_resumen(usuario)
         except ApplicationError as exc:
             return handle_auth_error(exc)
-
-        resumen = None
-        if usuario.rol.value == "CLIENTE":
-            alquileres = DjangoAlquilerRepository().list_by_usuario_id(usuario_id)
-            activos = sum(
-                1
-                for a in alquileres
-                if a.estado in (AlquilerEstado.PENDIENTE, AlquilerEstado.PAGADO)
-            )
-            pendientes_pago = sum(1 for a in alquileres if a.estado == AlquilerEstado.PENDIENTE)
-            finalizados = sum(1 for a in alquileres if a.estado == AlquilerEstado.FINALIZADO)
-            resumen = {
-                "total_alquileres": len(alquileres),
-                "activos": activos,
-                "pendientes_pago": pendientes_pago,
-                "finalizados": finalizados,
-            }
-
         return Response(
-            {
-                "usuario": usuario_to_dict(usuario),
-                "resumen": resumen,
-            },
+            {"usuario": usuario_to_dict(usuario), "resumen": resumen},
             status=status.HTTP_200_OK,
         )

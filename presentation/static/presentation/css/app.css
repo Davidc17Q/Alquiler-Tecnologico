@@ -179,12 +179,126 @@ body {
 
 .field-group input:focus + label,
 .field-group input:not(:placeholder-shown) + label,
+.field-group.has-value label,
 .field-group select:focus + label,
 .field-group select:not([value=""]) + label {
   top: 0.65rem;
   font-size: 0.65rem;
   color: var(--accent-cyan);
   transform: translateY(0);
+}
+
+/* Auth gate — visibilidad sin depender solo de Tailwind */
+#auth-gate.hidden {
+  display: none !important;
+  pointer-events: none;
+}
+
+#auth-gate:not(.hidden) {
+  display: flex;
+}
+
+#app-shell.hidden {
+  display: none !important;
+}
+
+.auth-gate-card {
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+}
+
+.auth-gate-card h2 {
+  color: var(--text-primary);
+  line-height: 1.25;
+}
+
+.auth-staff-hint {
+  word-break: break-word;
+}
+
+.auth-lang-form {
+  margin: 0;
+}
+
+/* Formulario de acceso — etiquetas arriba (no floating labels) */
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.auth-form.is-hidden {
+  display: none !important;
+}
+
+.auth-error {
+  display: none;
+  padding: 0.65rem 0.85rem;
+  border-radius: 0.5rem;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: #fecaca;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(248, 113, 113, 0.35);
+}
+
+.auth-error.visible {
+  display: block;
+}
+
+.auth-submit:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.auth-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.auth-field label {
+  position: static;
+  transform: none;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  pointer-events: auto;
+}
+
+.auth-field input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.75rem 1rem;
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.75rem;
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  font-family: inherit;
+}
+
+.auth-field input:focus {
+  outline: none;
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.15);
+}
+
+.auth-submit {
+  display: block;
+  width: 100%;
+  margin-top: 0.25rem;
+  padding: 0.75rem 1rem;
+  border: none;
+  border-radius: 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #0f172a;
+  cursor: pointer;
+}
+
+.auth-tabs {
+  display: flex;
 }
 
 /* Premium buttons */
@@ -326,12 +440,12 @@ body {
   }
 }
 
-/* Toast */
+/* Toast — por encima del auth-gate (z-index 200) */
 .toast-container {
   position: fixed;
   bottom: 1.5rem;
   right: 1.5rem;
-  z-index: 100;
+  z-index: 300;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -488,21 +602,13 @@ body {
   transform: translateY(-1px);
 }
 
-/* Section visibility — dashboard visible aunque falle JS */
+/* Section visibility */
 .page-section {
   display: none;
 }
 
 .page-section.active {
   display: block;
-}
-
-#section-dashboard {
-  display: block;
-}
-
-#section-dashboard:not(.active) {
-  display: none;
 }
 
 /* Responsive sidebar */

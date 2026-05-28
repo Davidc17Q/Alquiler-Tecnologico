@@ -19,7 +19,15 @@ class UsuarioRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def create(self, usuario: Usuario) -> Usuario:
+    def create(self, usuario: Usuario, password_hash: str = "") -> Usuario:
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_password_hash(self, usuario_id: int) -> str:
+        raise NotImplementedError
+
+    @abstractmethod
+    def update_password_hash(self, usuario_id: int, password_hash: str) -> None:
         raise NotImplementedError
 
     @abstractmethod

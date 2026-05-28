@@ -8,23 +8,13 @@ concreta encapsula la comunicación HTTP con exchangerate-api.com.
 from __future__ import annotations
 
 import logging
-from abc import ABC, abstractmethod
-
 import requests
+
+from application.interfaces.currency_service import ICurrencyService
 
 logger = logging.getLogger(__name__)
 
-# URL pública de tasas basadas en USD
 EXCHANGE_RATE_API_URL = "https://api.exchangerate-api.com/v4/latest/USD"
-
-
-class ICurrencyService(ABC):
-    """Puerto abstracto para obtener tasas de cambio."""
-
-    @abstractmethod
-    def get_rate(self, currency: str) -> float:
-        """Devuelve la tasa de conversión desde USD hacia la moneda indicada."""
-        raise NotImplementedError
 
 
 class ExchangeRateAdapter(ICurrencyService):

@@ -15,6 +15,7 @@ class UsuarioModel(models.Model):
         default=RolUsuario.CLIENTE.value,
     )
     activo = models.BooleanField(default=True)
+    password = models.CharField(max_length=128)
 
     class Meta:
         db_table = "usuario"

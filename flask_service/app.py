@@ -1,7 +1,7 @@
 """
-Microservicio Flask — Strangler Pattern.
+Microservicio Flask — Strangler Pattern (catálogo de equipos).
 
-Expone endpoints de consulta de equipos desacoplados del monolito Django.
+Lee equipos disponibles desde la BD SQLite compartida con el monolito Django.
 Nginx enruta /api/equipos/ hacia este servicio.
 """
 
@@ -9,41 +9,23 @@ from __future__ import annotations
 
 from flask import Flask, jsonify
 
-app = Flask(__name__)
+from sqlite_store import list_equipos_disponibles
 
-# Datos mock de equipos disponibles (catálogo ligero del microservicio).
-_EQUIPOS_DISPONIBLES = [
-    {
-        "id": 1,
-        "nombre": "Laptop Gamer",
-        "disponible": True,
-        "precio_dia": 120000,
-    },
-    {
-        "id": 2,
-        "nombre": "Tablet Pro",
-        "disponible": True,
-        "precio_dia": 45000,
-    },
-    {
-        "id": 3,
-        "nombre": "Proyector 4K",
-        "disponible": True,
-        "precio_dia": 80000,
-    },
-]
+app = Flask(__name__)
 
 
 @app.get("/health")
 def health() -> tuple[dict, int]:
-    """Comprobación de vida para Docker healthcheck y orquestación."""
-    return jsonify({"status": "ok"}), 200
+    return jsonify({"status": "ok", "service": "flask-equipos"}), 200
 
 
 @app.get("/api/equipos/disponibles")
 def equipos_disponibles() -> tuple[list, int]:
-    """Lista equipos disponibles (mock) — ruta consumida vía API Gateway."""
-    return jsonify(_EQUIPOS_DISPONIBLES), 200
+    try:
+        data = list_equipos_disponibles()
+    except Exception as exc:  # noqa: BLE001
+        return jsonify({"detail": f"Error al leer catálogo: {exc}"}), 503
+    return jsonify(data), 200
 
 
 if __name__ == "__main__":

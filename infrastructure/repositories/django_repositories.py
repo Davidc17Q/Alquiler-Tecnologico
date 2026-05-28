@@ -92,15 +92,22 @@ class DjangoUsuarioRepository(UsuarioRepository):
             return None
         return _map_usuario_model_to_entity(model)
 
-    def create(self, usuario: Usuario) -> Usuario:
+    def create(self, usuario: Usuario, password_hash: str = "") -> Usuario:
         model = UsuarioModel.objects.create(
             nombre=usuario.nombre,
             email=usuario.email,
             fecha_registro=usuario.fecha_registro,
             rol=usuario.rol.value,
             activo=usuario.activo,
+            password=password_hash,
         )
         return _map_usuario_model_to_entity(model)
+
+    def get_password_hash(self, usuario_id: int) -> str:
+        return UsuarioModel.objects.values_list("password", flat=True).get(pk=usuario_id)
+
+    def update_password_hash(self, usuario_id: int, password_hash: str) -> None:
+        UsuarioModel.objects.filter(pk=usuario_id).update(password=password_hash)
 
     def list_all(self):
         return [_map_usuario_model_to_entity(m) for m in UsuarioModel.objects.order_by("-fecha_registro")]

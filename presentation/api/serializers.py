@@ -8,10 +8,12 @@ from domain.enums import MetodoPago
 class UsuarioCreateSerializer(serializers.Serializer):
     nombre = serializers.CharField(max_length=150)
     email = serializers.EmailField()
+    password = serializers.CharField(min_length=6, max_length=128, write_only=True)
 
 
 class AuthLoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
+    password = serializers.CharField(max_length=128, write_only=True)
 
 
 class EquipoSerializer(serializers.Serializer):

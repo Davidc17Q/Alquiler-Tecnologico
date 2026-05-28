@@ -84,3 +84,54 @@ msgstr "Costo total"
 
 msgid "Bienvenido a la plataforma de alquiler tecnológico"
 msgstr "Bienvenido a la plataforma de alquiler tecnológico"
+
+msgid "Bienvenido a TechRent"
+msgstr "Bienvenido a TechRent"
+
+msgid "Inicia sesión o crea tu cuenta para alquilar equipos"
+msgstr "Inicia sesión o crea tu cuenta para alquilar equipos"
+
+msgid "Vendedores: vendor@techrent.com — clave demo TechRent2026!"
+msgstr "Vendedores: vendor@techrent.com — clave demo TechRent2026!"
+
+msgid "Demo staff:"
+msgstr "Cuentas demo:"
+
+msgid "clave"
+msgstr "clave"
+
+msgid "Iniciar sesión"
+msgstr "Iniciar sesión"
+
+msgid "Registrarse"
+msgstr "Registrarse"
+
+msgid "Contraseña"
+msgstr "Contraseña"
+
+msgid "Entrar"
+msgstr "Entrar"
+
+msgid "Nombre completo"
+msgstr "Nombre completo"
+
+msgid "Crear cuenta"
+msgstr "Crear cuenta"
+
+msgid "La contraseña debe tener al menos 6 caracteres."
+msgstr "La contraseña debe tener al menos 6 caracteres."
+
+msgid "Ya existe una cuenta registrada con ese correo."
+msgstr "Ya existe una cuenta registrada con ese correo."
+
+msgid "No hay cuenta con ese correo. Regístrate primero."
+msgstr "No hay cuenta con ese correo. Regístrate primero."
+
+msgid "Tu cuenta está bloqueada. Contacta al soporte."
+msgstr "Tu cuenta está bloqueada. Contacta al soporte."
+
+msgid "Correo o contraseña incorrectos."
+msgstr "Correo o contraseña incorrectos."
+
+msgid "La sesión ya no es válida. Inicia sesión de nuevo."
+msgstr "La sesión ya no es válida. Inicia sesión de nuevo."

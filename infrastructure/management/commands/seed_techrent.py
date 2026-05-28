@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from decimal import Decimal
 
+from django.contrib.auth.hashers import make_password
 from django.core.management.base import BaseCommand
 
 from domain.enums import EquipoEstado, RolUsuario
@@ -330,17 +331,26 @@ class Command(BaseCommand):
             )
         )
 
+        staff_password = make_password("TechRent2026!")
         staff = [
             ("Vendedor TechRent", "vendor@techrent.com", RolUsuario.VENDOR),
             ("Admin TechRent", "admin@techrent.com", RolUsuario.ADMIN),
         ]
         for nombre, email, rol in staff:
-            if not UsuarioModel.objects.filter(email=email).exists():
+            user = UsuarioModel.objects.filter(email=email).first()
+            if user is None:
                 UsuarioModel.objects.create(
                     nombre=nombre,
                     email=email,
                     fecha_registro=datetime.now(timezone.utc),
                     rol=rol.value,
                     activo=True,
+                    password=staff_password,
                 )
-                self.stdout.write(self.style.SUCCESS(f"Usuario staff: {email} ({rol.value})"))
+                self.stdout.write(
+                    self.style.SUCCESS(f"Usuario staff: {email} ({rol.value}) — clave: TechRent2026!")
+                )
+            elif not user.password:
+                user.password = staff_password
+                user.save(update_fields=["password"])
+                self.stdout.write(self.style.WARNING(f"Contraseña actualizada para {email}"))

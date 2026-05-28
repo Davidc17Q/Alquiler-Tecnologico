@@ -22,8 +22,6 @@ const TechRentAdmin = (function () {
     { key: "ingresos_mensuales", label: "Ingresos mensuales", icon: "banknote", color: "emerald", money: true },
     { key: "alquileres_activos", label: "Alquileres activos", icon: "calendar-check", color: "purple" },
     { key: "pagos_pendientes", label: "Pagos pendientes", icon: "credit-card", color: "amber" },
-    { key: "microservicios_online", label: "Microservicios online", icon: "server", color: "blue", suffix: "/6" },
-    { key: "workers_activos", label: "Workers activos", icon: "cpu", color: "emerald" },
     { key: "uso_sistema", label: "Uso del sistema", icon: "activity", color: "rose", suffix: "%" },
   ];
 
@@ -103,9 +101,7 @@ const TechRentAdmin = (function () {
     if (!grid) return;
     grid.innerHTML = METRIC_DEFS.map((def, i) => {
       let val = metrics[def.key] ?? 0;
-      if (def.key === "microservicios_online") {
-        val = `${val}/${metrics.microservicios_total || 6}`;
-      } else if (def.money) val = formatMoney(val);
+      if (def.money) val = formatMoney(val);
       else if (def.suffix === "%") val = `${val}%`;
       else if (def.suffix) val = `${val}${def.suffix}`;
       else val = Number(val).toLocaleString("es-CO");
@@ -223,7 +219,16 @@ const TechRentAdmin = (function () {
     if (list) list.innerHTML = '<div class="skeleton-admin h-16"></div>'.repeat(3);
     const res = await apiFetch(`${API.v1}/admin/clientes/?q=${encodeURIComponent(q)}`);
     const data = await parseJson(res);
-    if (!res.ok) return;
+    if (!res.ok) {
+      const msg = data.detail || "No se pudo cargar la lista de clientes.";
+      if (list) list.innerHTML = `<p class="text-red-400 text-sm">${escapeHtml(msg)}</p>`;
+      toast(msg, "error");
+      return;
+    }
+    if (!Array.isArray(data)) {
+      if (list) list.innerHTML = '<p class="text-red-400 text-sm">Respuesta inválida del servidor.</p>';
+      return;
+    }
     state.clientes = data;
     if (!list) return;
     if (!data.length) {
@@ -388,36 +393,13 @@ const TechRentAdmin = (function () {
         <p class="text-xs font-mono text-cyan-400">${s.latencia_ms}ms</p>
         <div class="mt-3 space-y-1 text-[10px] text-slate-500">
           <div class="flex justify-between"><span>CPU</span><span>${s.cpu_mock}%</span></div>
-          <div class="h-1.5 rounded-full bg-slate-800"><div class="h-full rounded-full bg-cyan-500/60" style="width:${s.cpu_mock}%"></div></div>
-          <div class="flex justify-between"><span>RAM</span><span>${s.memoria_mock}%</span></div>
-          <div class="h-1.5 rounded-full bg-slate-800"><div class="h-full rounded-full bg-purple-500/60" style="width:${s.memoria_mock}%"></div></div>
+          ${s.metricas_simuladas ? '<p class="text-[9px] text-amber-400/80">CPU/RAM simuladas</p>' : ""}
+          <div class="h-1.5 rounded-full bg-slate-800"><div class="h-full rounded-full bg-cyan-500/60" style="width:${s.cpu_pct || 0}%"></div></div>
+          <div class="flex justify-between"><span>RAM</span><span>${s.memoria_pct || 0}%</span></div>
+          <div class="h-1.5 rounded-full bg-slate-800"><div class="h-full rounded-full bg-purple-500/60" style="width:${s.memoria_pct || 0}%"></div></div>
         </div>
         <pre class="worker-log mt-3 text-[9px]">${(s.logs || []).join("\n")}</pre>
       </div>`).join("");
-  }
-
-  async function loadWorkers() {
-    const res = await apiFetch(`${API.v1}/admin/workers/`);
-    const data = await parseJson(res);
-    if (!res.ok) return;
-    const qEl = document.getElementById("admin-workers-queues");
-    if (qEl) {
-      qEl.innerHTML = (data.colas || []).map((c) => `
-        <div class="flex justify-between py-2 border-b border-slate-800/60 text-sm">
-          <span class="font-mono text-purple-300">${c.nombre}</span>
-          <span class="text-slate-400">${c.pendientes} pend. · ${c.activas} activas</span>
-        </div>`).join("");
-    }
-    const tEl = document.getElementById("admin-workers-tasks");
-    if (tEl) {
-      tEl.innerHTML = (data.tareas_recientes || []).map((t) => `
-        <div class="flex justify-between py-2 text-xs border-b border-slate-800/40">
-          <span class="text-slate-300">${t.nombre}</span>
-          <span class="badge ${t.estado === "SUCCESS" ? "badge-online" : "badge-pending"}">${t.estado}</span>
-        </div>`).join("");
-    }
-    const logs = document.getElementById("admin-workers-logs");
-    if (logs) logs.textContent = (data.logs || []).join("\n");
   }
 
   function navigate(section) {
@@ -434,7 +416,6 @@ const TechRentAdmin = (function () {
       "admin-equipos": "Equipos",
       "admin-alquileres": "Alquileres",
       "admin-infra": "Microservicios",
-      "admin-workers": "Workers",
     };
     const t = document.getElementById("admin-page-title");
     if (t) t.textContent = titles[section] || section;
@@ -445,7 +426,6 @@ const TechRentAdmin = (function () {
     if (section === "admin-equipos") loadEquipos();
     if (section === "admin-alquileres") loadAlquileres();
     if (section === "admin-infra") loadInfra();
-    if (section === "admin-workers") loadWorkers();
 
     document.getElementById("admin-sidebar")?.classList.remove("open");
     if (typeof lucide !== "undefined") lucide.createIcons();

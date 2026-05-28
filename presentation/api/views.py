@@ -17,58 +17,23 @@ from application.exceptions import (
     NotFoundError,
     ValidationError,
 )
+from application.tasks import (
+    enviar_notificacion,
+    generar_reporte_alquileres,
+    notificar_alquiler_creado,
+    notificar_pago_confirmado,
+)
+from presentation.api.mappers import alquiler_detalle_to_dict, equipo_to_dict, usuario_to_dict
+from presentation.api.serializers import AlquilerCreateSerializer, UsuarioCreateSerializer
 from presentation.api.session_auth import handle_auth_error, requiere_sesion
-from application.services.alquiler_service import AlquilerService
-from application.services.currency_conversion_service import CurrencyConversionService
-from application.services.equipo_service import EquipoService
-from application.services.info_sistema_service import InfoSistemaService
-from application.services.usuario_service import UsuarioService
-from application.tasks import enviar_notificacion, generar_reporte_alquileres
-from infrastructure.adapters.currency_adapter import ExchangeRateAdapter
-from infrastructure.repositories.django_repositories import (
-    DjangoAlquilerRepository,
-    DjangoEquipoRepository,
-    DjangoUsuarioRepository,
+from presentation.di import (
+    build_alquiler_service,
+    build_auth_service,
+    build_currency_conversion_service,
+    build_equipo_service,
+    build_info_sistema_service,
+    build_usuario_service,
 )
-from presentation.api.mappers import (
-    alquiler_detalle_to_dict,
-    alquiler_to_dict,
-    equipo_to_dict,
-    usuario_to_dict,
-)
-from presentation.api.serializers import (
-    AlquilerCreateSerializer,
-    AlquilerSerializer,
-    UsuarioCreateSerializer,
-)
-
-
-def _build_usuario_service() -> UsuarioService:
-    return UsuarioService(usuario_repository=DjangoUsuarioRepository())
-
-
-def _build_equipo_service() -> EquipoService:
-    return EquipoService(equipo_repository=DjangoEquipoRepository())
-
-
-def _build_alquiler_service() -> AlquilerService:
-    return AlquilerService(
-        usuario_repository=DjangoUsuarioRepository(),
-        equipo_repository=DjangoEquipoRepository(),
-        alquiler_repository=DjangoAlquilerRepository(),
-    )
-
-
-def _build_info_sistema_service() -> InfoSistemaService:
-    return InfoSistemaService(
-        equipo_repository=DjangoEquipoRepository(),
-        alquiler_repository=DjangoAlquilerRepository(),
-    )
-
-
-def _build_currency_conversion_service() -> CurrencyConversionService:
-    adapter = ExchangeRateAdapter(timeout_seconds=settings.EXCHANGE_RATE_TIMEOUT)
-    return CurrencyConversionService(currency_service=adapter)
 
 
 def _handle_application_error(exc: ApplicationError) -> Response:
@@ -83,25 +48,28 @@ def _handle_application_error(exc: ApplicationError) -> Response:
 
 @method_decorator(csrf_exempt, name="dispatch")
 class UsuarioCreateView(APIView):
+    """Legacy — preferir /api/v1/auth/registro/."""
+
     def post(self, request: HttpRequest) -> Response:
         serializer = UsuarioCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        service = _build_usuario_service()
-        usuario = service.crear_usuario(
-            nombre=serializer.validated_data["nombre"],
-            email=serializer.validated_data["email"],
-        )
-        data = usuario_to_dict(usuario)
-        return Response(data, status=status.HTTP_201_CREATED)
+        auth = build_auth_service()
+        try:
+            usuario = auth.registrar(
+                nombre=serializer.validated_data["nombre"],
+                email=serializer.validated_data["email"],
+                password=serializer.validated_data["password"],
+            )
+        except ApplicationError as exc:
+            return handle_auth_error(exc)
+        return Response(usuario_to_dict(usuario), status=status.HTTP_201_CREATED)
 
 
 @method_decorator(csrf_exempt, name="dispatch")
 class EquipoListView(APIView):
     def get(self, request: HttpRequest) -> Response:
-        service = _build_equipo_service()
+        service = build_equipo_service()
         equipos = service.listar_equipos()
-        # Respuesta directa desde el mapper: usar Serializer(data=...) elimina
-        # campos read_only (p. ej. id) y provocaba "undefined" en el frontend.
         data = [equipo_to_dict(e) for e in equipos]
         return Response(data, status=status.HTTP_200_OK)
 
@@ -116,7 +84,7 @@ class AlquilerCreateView(APIView):
 
         serializer = AlquilerCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        service = _build_alquiler_service()
+        service = build_alquiler_service()
 
         try:
             alquiler = service.crear_alquiler(
@@ -128,20 +96,23 @@ class AlquilerCreateView(APIView):
         except ApplicationError as exc:
             return _handle_application_error(exc)
 
+        notificar_alquiler_creado.delay(
+            alquiler.id,
+            usuario_id,
+            alquiler.equipo.nombre,
+        )
         return Response(alquiler_detalle_to_dict(alquiler), status=status.HTTP_201_CREATED)
 
 
 @method_decorator(csrf_exempt, name="dispatch")
 class MisAlquileresView(APIView):
-    """GET /api/v1/mis-alquileres/ — historial del cliente autenticado."""
-
     def get(self, request: HttpRequest) -> Response:
         try:
             usuario_id = requiere_sesion(request)
         except AuthenticationError as exc:
             return handle_auth_error(exc)
 
-        service = _build_alquiler_service()
+        service = build_alquiler_service()
         try:
             alquileres = service.listar_por_usuario(usuario_id)
         except ApplicationError as exc:
@@ -152,18 +123,34 @@ class MisAlquileresView(APIView):
 
 
 @method_decorator(csrf_exempt, name="dispatch")
-class InfoSistemaView(APIView):
-    """GET /api/info/ — estadísticas reales del sistema (monolito Django)."""
+class NotificarPagoView(APIView):
+    """POST /api/v1/notificar-pago/ — encola tarea Celery tras pago en microservicio."""
 
+    def post(self, request: HttpRequest) -> Response:
+        try:
+            usuario_id = requiere_sesion(request)
+        except AuthenticationError as exc:
+            return handle_auth_error(exc)
+        alquiler_id = int(request.data.get("alquiler_id", 0))
+        monto = str(request.data.get("monto", "0"))
+        if alquiler_id < 1:
+            return Response({"detail": "alquiler_id inválido"}, status=400)
+        notificar_pago_confirmado.delay(alquiler_id, usuario_id, monto)
+        return Response(
+            {"detail": str(_("Notificación de pago encolada."))},
+            status=status.HTTP_202_ACCEPTED,
+        )
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+class InfoSistemaView(APIView):
     def get(self, request: HttpRequest) -> Response:
-        service = _build_info_sistema_service()
+        service = build_info_sistema_service()
         return Response(service.obtener_informacion(), status=status.HTTP_200_OK)
 
 
 @method_decorator(csrf_exempt, name="dispatch")
 class PrecioConversionView(APIView):
-    """GET /api/precio-conversion/ — convierte USD a COP vía adaptador externo."""
-
     def get(self, request: HttpRequest) -> Response:
         precio_param = request.query_params.get("precio_usd")
         try:
@@ -174,7 +161,7 @@ class PrecioConversionView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        service = _build_currency_conversion_service()
+        service = build_currency_conversion_service()
         try:
             resultado = service.convertir_precio_usd_a_cop(precio_usd)
         except ValueError as exc:
@@ -190,8 +177,6 @@ class PrecioConversionView(APIView):
 
 @method_decorator(csrf_exempt, name="dispatch")
 class CeleryDemoView(APIView):
-    """POST /api/tareas/demo/ — encola tareas Celery de demostración."""
-
     def post(self, request: HttpRequest) -> Response:
         usuario_id = int(request.data.get("usuario_id", 1))
         mensaje = request.data.get("mensaje", str(_("Alquiler confirmado")))

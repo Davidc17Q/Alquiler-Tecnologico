@@ -6,6 +6,7 @@
 const API = {
   v1: "/api/v1",
   pagos: "/api/v2/pagos/",
+  equiposFlask: "/api/equipos/disponibles",
 };
 
 const state = {
@@ -96,6 +97,31 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
+function apiErrorMessage(data, fallback) {
+  if (!data) return fallback;
+  if (typeof data.detail === "string") return data.detail;
+  if (Array.isArray(data.detail)) return data.detail.join(" ");
+  if (typeof data === "object") {
+    for (const value of Object.values(data)) {
+      if (Array.isArray(value) && value[0]) return String(value[0]);
+      if (typeof value === "string") return value;
+    }
+  }
+  return fallback;
+}
+
+function setAuthError(formId, message) {
+  const el = document.getElementById(formId === "form-login" ? "auth-login-error" : "auth-register-error");
+  if (!el) return;
+  if (message) {
+    el.textContent = message;
+    el.classList.add("visible");
+  } else {
+    el.textContent = "";
+    el.classList.remove("visible");
+  }
+}
+
 function formatMoney(value) {
   const n = Number(value);
   if (Number.isNaN(n)) return `$${value}`;
@@ -181,6 +207,16 @@ async function fetchMe() {
   return data;
 }
 
+function initFloatingLabels() {
+  document.querySelectorAll(".field-group input, .field-group select").forEach((input) => {
+    const group = input.closest(".field-group");
+    const sync = () => group?.classList.toggle("has-value", Boolean(input.value?.trim()));
+    input.addEventListener("input", sync);
+    input.addEventListener("change", sync);
+    sync();
+  });
+}
+
 function initAuthTabs() {
   const tabLogin = document.getElementById("auth-tab-login");
   const tabRegister = document.getElementById("auth-tab-register");
@@ -192,8 +228,9 @@ function initAuthTabs() {
     tabLogin?.classList.remove("text-slate-400");
     tabRegister?.classList.remove("text-cyan-300", "bg-cyan-500/10");
     tabRegister?.classList.add("text-slate-400");
-    formLogin?.classList.remove("hidden");
-    formRegister?.classList.add("hidden");
+    formLogin?.classList.remove("is-hidden");
+    formRegister?.classList.add("is-hidden");
+    setAuthError("form-register", "");
   }
 
   function showRegister() {
@@ -201,60 +238,84 @@ function initAuthTabs() {
     tabRegister?.classList.remove("text-slate-400");
     tabLogin?.classList.remove("text-cyan-300", "bg-cyan-500/10");
     tabLogin?.classList.add("text-slate-400");
-    formRegister?.classList.remove("hidden");
-    formLogin?.classList.add("hidden");
+    formRegister?.classList.remove("is-hidden");
+    formLogin?.classList.add("is-hidden");
+    setAuthError("form-login", "");
   }
 
   tabLogin?.addEventListener("click", showLogin);
   tabRegister?.addEventListener("click", showRegister);
+  showLogin();
+}
+
+async function submitAuthForm(form, { url, payload, successToast, formKey }) {
+  const btn = form.querySelector('button[type="submit"]');
+  setAuthError(formKey, "");
+  if (btn) {
+    btn.disabled = true;
+    btn.setAttribute("aria-busy", "true");
+  }
+  try {
+    const res = await apiFetch(url, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+    const data = await parseJsonSafe(res);
+    if (!res.ok) {
+      throw new Error(apiErrorMessage(data, "No se pudo completar la solicitud."));
+    }
+    state.user = data;
+    setAuthError(formKey, "");
+    await routeAfterAuth(data);
+    toast(successToast(data));
+    form.reset();
+  } catch (err) {
+    const msg = err.message || "Error de conexión. Revisa que Docker esté en marcha.";
+    setAuthError(formKey, msg);
+    toast(msg, "error");
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.removeAttribute("aria-busy");
+    }
+  }
 }
 
 function initAuthForms() {
-  document.getElementById("form-login")?.addEventListener("submit", async (e) => {
+  const formLogin = document.getElementById("form-login");
+  const formRegister = document.getElementById("form-register");
+
+  formLogin?.addEventListener("submit", (e) => {
     e.preventDefault();
-    const email = document.getElementById("login-email").value.trim();
-    const btn = e.target.querySelector('button[type="submit"]');
-    btn.disabled = true;
-    try {
-      const res = await apiFetch(`${API.v1}/auth/login/`, {
-        method: "POST",
-        body: JSON.stringify({ email }),
-      });
-      const data = await parseJsonSafe(res);
-      if (!res.ok) throw new Error(data.detail || "No se pudo iniciar sesión");
-      state.user = data;
-      await routeAfterAuth(data);
-      toast(`Bienvenido, ${data.nombre}`);
-      e.target.reset();
-    } catch (err) {
-      toast(err.message, "error");
-    } finally {
-      btn.disabled = false;
+    const email = document.getElementById("login-email")?.value.trim();
+    const password = document.getElementById("login-password")?.value || "";
+    if (!email || !password) {
+      setAuthError("form-login", "Completa correo y contraseña.");
+      return;
     }
+    submitAuthForm(formLogin, {
+      url: `${API.v1}/auth/login/`,
+      payload: { email, password },
+      formKey: "form-login",
+      successToast: (data) => `Bienvenido, ${data.nombre}`,
+    });
   });
 
-  document.getElementById("form-register")?.addEventListener("submit", async (e) => {
+  formRegister?.addEventListener("submit", (e) => {
     e.preventDefault();
-    const nombre = document.getElementById("register-nombre").value.trim();
-    const email = document.getElementById("register-email").value.trim();
-    const btn = e.target.querySelector('button[type="submit"]');
-    btn.disabled = true;
-    try {
-      const res = await apiFetch(`${API.v1}/auth/registro/`, {
-        method: "POST",
-        body: JSON.stringify({ nombre, email }),
-      });
-      const data = await parseJsonSafe(res);
-      if (!res.ok) throw new Error(data.detail || "No se pudo registrar");
-      state.user = data;
-      await routeAfterAuth(data);
-      toast(`Cuenta creada — hola, ${data.nombre}`);
-      e.target.reset();
-    } catch (err) {
-      toast(err.message, "error");
-    } finally {
-      btn.disabled = false;
+    const nombre = document.getElementById("register-nombre")?.value.trim();
+    const email = document.getElementById("register-email")?.value.trim();
+    const password = document.getElementById("register-password")?.value || "";
+    if (!nombre || !email || !password) {
+      setAuthError("form-register", "Completa todos los campos.");
+      return;
     }
+    submitAuthForm(formRegister, {
+      url: `${API.v1}/auth/registro/`,
+      payload: { nombre, email, password },
+      formKey: "form-register",
+      successToast: (data) => `Cuenta creada — hola, ${data.nombre}`,
+    });
   });
 }
 
@@ -700,10 +761,19 @@ async function loadEquiposTable() {
   catalog.innerHTML = `<div class="glass-card p-8 text-center text-slate-500 text-sm">Cargando inventario…</div>`;
 
   try {
-    const res = await apiFetch(`${API.v1}/equipos/`);
-    const data = await parseJsonSafe(res);
-    if (!res.ok) throw new Error(data.detail || "Error equipos");
-    state.equipos = Array.isArray(data) ? data : [];
+    let fuente = "flask-ms";
+    let res = await apiFetch(API.equiposFlask);
+    let data = await parseJsonSafe(res);
+    if (!res.ok || !Array.isArray(data) || !data.length) {
+      fuente = "django-monolito";
+      res = await apiFetch(`${API.v1}/equipos/`);
+      data = await parseJsonSafe(res);
+      if (!res.ok) throw new Error(data.detail || "Error equipos");
+    }
+    state.equipos = (Array.isArray(data) ? data : []).map((e) => ({
+      ...e,
+      estado: e.estado || (e.disponible === false ? "NO_DISPONIBLE" : "DISPONIBLE"),
+    }));
 
     if (!state.equipos.length) {
       catalog.innerHTML = `<div class="glass-card p-8 text-center text-slate-500 text-sm">Sin equipos en catálogo.</div>`;
@@ -716,7 +786,7 @@ async function loadEquiposTable() {
 
     const resumen = document.getElementById("equipos-resumen");
     if (resumen) {
-      resumen.textContent = `${state.equipos.length} equipos en ${grupos.length} categorías`;
+      resumen.textContent = `${state.equipos.length} equipos en ${grupos.length} categorías · ${fuente === "flask-ms" ? "Flask MS (Strangler)" : "Django"}`;
     }
 
     bindCategoryAccordions();
@@ -800,6 +870,13 @@ function initForms() {
       const data = await parseJsonSafe(res);
       if (!res.ok) throw new Error(data.detail || "Error al procesar pago");
       toast(`Pago #${data.id} confirmado`);
+      await apiFetch(`${API.v1}/notificar-pago/`, {
+        method: "POST",
+        body: JSON.stringify({
+          alquiler_id: payload.alquiler_id,
+          monto: payload.monto,
+        }),
+      });
       await fetchMe();
       await loadMisAlquileres();
       e.target.reset();
@@ -814,6 +891,9 @@ function initForms() {
 // ─── Init ─────────────────────────────────────────────────────────────────
 
 document.addEventListener("DOMContentLoaded", () => {
+  const lang = document.documentElement.getAttribute("lang") || "es";
+  if (window.TechRentI18n) window.TechRentI18n.apply(lang);
+  initFloatingLabels();
   initNavigation();
   initSidebarMobile();
   initForms();

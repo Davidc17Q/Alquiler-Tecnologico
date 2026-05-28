@@ -8,21 +8,13 @@ from django.http import HttpRequest
 from django.utils.translation import gettext_lazy as _
 
 from application.exceptions import ApplicationError, AuthenticationError, ForbiddenError
-from application.services.auth_service import AuthService
 from domain.enums import RolUsuario
-from infrastructure.repositories.django_repositories import DjangoUsuarioRepository
+from presentation.di import build_auth_service
 from rest_framework import status
 from rest_framework.response import Response
 
 SESSION_USUARIO_KEY = "usuario_id"
 ROLES_STAFF = frozenset({RolUsuario.VENDOR, RolUsuario.ADMIN})
-
-
-def build_auth_service() -> AuthService:
-    return AuthService(usuario_repository=DjangoUsuarioRepository())
-
-
-_build_auth_service = build_auth_service
 
 
 def usuario_id_en_sesion(request: HttpRequest) -> int | None:
@@ -49,7 +41,7 @@ def requiere_sesion(request: HttpRequest) -> int:
 
 def requiere_staff(request: HttpRequest) -> int:
     usuario_id = requiere_sesion(request)
-    usuario = _build_auth_service().obtener_usuario(usuario_id)
+    usuario = build_auth_service().obtener_usuario(usuario_id)
     if usuario.rol not in ROLES_STAFF:
         raise ForbiddenError(_("No tienes acceso al panel administrativo."))
     if not usuario.activo:

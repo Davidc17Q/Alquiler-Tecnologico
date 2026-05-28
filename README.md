@@ -77,6 +77,7 @@ docker compose exec django python manage.py seed_techrent --append
 | Recurso | URL |
 |---------|-----|
 | **Aplicación web** | http://localhost |
+| **Catálogo Strangler** | http://localhost/api/equipos/disponibles (Flask + SQLite compartida) |
 | Django (directo) | http://localhost:8000 |
 | Flask equipos | http://localhost:5000 |
 | Pagos MS | http://localhost:5001 |
@@ -84,14 +85,46 @@ docker compose exec django python manage.py seed_techrent --append
 
 Abre **http://localhost** en el navegador. El login detecta el rol y muestra el panel de **cliente** o el de **vendedor/admin**.
 
+### Cuentas de prueba (tras `seed_techrent`)
 
+| Rol | Correo | Panel |
+|-----|--------|--------|
+| Cliente | Registro libre en la UI | Catálogo y alquileres |
+| Vendedor | `vendor@techrent.com` | TechRent Ops (admin) |
+| Admin | `admin@techrent.com` | TechRent Ops (admin) |
+
+El inicio de sesión requiere **correo y contraseña** (mínimo 6 caracteres). Tras `seed_techrent`, staff usa la clave demo `TechRent2026!`.
+
+**Idioma:** botones ES / EN en la pantalla de acceso (Django `set_language` + `locale/`).
+
+## Desarrollo local (sin Docker)
+
+```bash
+python -m venv .venv
+.venv\Scripts\activate          # Windows
+# source .venv/bin/activate     # Linux/macOS
+
+pip install -r requirements.txt
+cp .env.example .env
+# En .env para local: DATABASE_URL=sqlite:///db.sqlite3
+
+python manage.py migrate
+python manage.py seed_techrent --append
+python manage.py runserver
+```
+
+Visita http://127.0.0.1:8000. Los microservicios y Nginx requieren Docker para el flujo completo híbrido.
+
+## API principal
+
+Todas las rutas del monolito usan prefijo **`/api/v1/`** (sesión con cookie; el frontend envía `credentials: 'include'`).
 
 ### Autenticación
 
 | Método | Ruta | Descripción |
 |--------|------|-------------|
-| POST | `/api/v1/auth/registro/` | Alta de cliente + sesión |
-| POST | `/api/v1/auth/login/` | Login por email |
+| POST | `/api/v1/auth/registro/` | `{ nombre, email, password }` — alta + sesión |
+| POST | `/api/v1/auth/login/` | `{ email, password }` |
 | POST | `/api/v1/auth/logout/` | Cerrar sesión |
 | GET | `/api/v1/auth/me/` | Usuario actual y resumen |
 
@@ -113,7 +146,6 @@ Abre **http://localhost** en el navegador. El login detecta el rol y muestra el 
 | GET/POST/PATCH/DELETE | `/api/v1/admin/equipos/` | CRUD de equipos |
 | GET | `/api/v1/admin/alquileres/` | Todos los alquileres |
 | GET | `/api/v1/admin/infra/` | Health de servicios |
-| GET | `/api/v1/admin/workers/` | Estado Celery/Redis (mock) |
 
 ### Gateway y microservicios (vía Nginx en `:80`)
 
@@ -152,6 +184,27 @@ docker compose logs -f django
 # Reiniciar tras cambios
 docker compose up -d --build
 
+# Reiniciar web sin 502 (Windows PowerShell)
+.\scripts\restart-web.ps1
+```
+
+### Si aparece «502 Bad Gateway»
+
+Suele ocurrir al reiniciar **solo** Django: Nginx intenta conectar mientras Gunicorn aún arranca (20–40 s).
+
+```powershell
+# Opción 1 (recomendada)
+.\scripts\restart-web.ps1
+
+# Opción 2 (manual)
+docker compose restart django nginx
+# Espera ~30 s y recarga http://localhost
+
+# Mientras tanto puedes usar Django directo:
+# http://localhost:8000
+```
+
+```bash
 # Shell Django
 docker compose exec django python manage.py shell
 
@@ -159,3 +212,20 @@ docker compose exec django python manage.py shell
 curl -X POST http://localhost/api/tareas/demo/ -H "Content-Type: application/json" -d "{}"
 ```
 
+## Tests
+
+```bash
+# Local: apunta DATABASE_URL a db.sqlite3 (ver sección desarrollo local)
+pytest
+```
+
+Pruebas unitarias de la capa de aplicación en `tests/test_alquiler_service.py`.
+
+## Internacionalización
+
+Traducciones en `locale/es` y `locale/en`. Configuración en `config/settings.py` (`LANGUAGE_CODE`, `LANGUAGES`). En Docker, `compilemessages` se ejecuta al arrancar el contenedor `django`.
+
+## Licencia y autoría
+
+Proyecto académico — Arquitectura de Software.  
+Repositorio: [Davidc17Q/Alquiler-Tecnologico](https://github.com/Davidc17Q/Alquiler-Tecnologico)

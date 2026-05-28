@@ -67,6 +67,12 @@ class AdminGestionService:
     def listar_equipos(self) -> list[Equipo]:
         return list(self._equipos.list_all())
 
+    def obtener_equipo(self, equipo_id: int) -> Equipo:
+        equipo = self._equipos.get_by_id(equipo_id)
+        if equipo is None:
+            raise NotFoundError(_("Equipo no encontrado."))
+        return equipo
+
     def guardar_equipo(
         self,
         *,

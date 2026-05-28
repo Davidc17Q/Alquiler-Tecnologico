@@ -12,7 +12,7 @@ from typing import Any
 
 from django.utils.translation import gettext_lazy as _
 
-from infrastructure.adapters.currency_adapter import ICurrencyService
+from application.interfaces.currency_service import ICurrencyService
 
 
 class CurrencyConversionService:

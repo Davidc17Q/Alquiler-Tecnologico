@@ -23,7 +23,6 @@
       <a href="#" data-admin-section="admin-equipos" class="admin-nav-link"><i data-lucide="package" class="w-4 h-4 shrink-0"></i><span class="admin-nav-label">Equipos</span></a>
       <a href="#" data-admin-section="admin-alquileres" class="admin-nav-link"><i data-lucide="calendar-range" class="w-4 h-4 shrink-0"></i><span class="admin-nav-label">Alquileres</span></a>
       <a href="#" data-admin-section="admin-infra" class="admin-nav-link"><i data-lucide="network" class="w-4 h-4 shrink-0"></i><span class="admin-nav-label">Microservicios</span></a>
-      <a href="#" data-admin-section="admin-workers" class="admin-nav-link"><i data-lucide="cpu" class="w-4 h-4 shrink-0"></i><span class="admin-nav-label">Workers</span></a>
     </nav>
 
     <div class="p-4 border-t border-slate-800/80 space-y-2">
@@ -101,15 +100,6 @@
           <p class="absolute inset-0 flex items-center justify-center text-slate-500 text-sm">Mapa de arquitectura</p>
         </div>
         <div id="admin-infra-grid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-      </section>
-
-      <!-- Workers -->
-      <section id="admin-section-workers" class="admin-section space-y-4">
-        <div class="grid lg:grid-cols-2 gap-6">
-          <div class="glass-card p-6"><h3 class="text-sm font-semibold mb-4">Colas Redis</h3><div id="admin-workers-queues"></div></div>
-          <div class="glass-card p-6"><h3 class="text-sm font-semibold mb-4">Tareas recientes</h3><div id="admin-workers-tasks"></div></div>
-        </div>
-        <div class="glass-card p-6"><h3 class="text-sm font-semibold mb-2">Logs</h3><pre id="admin-workers-logs" class="worker-log"></pre></div>
       </section>
     </main>
   </div>

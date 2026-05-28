@@ -1,36 +1,68 @@
+{% load i18n %}
 <!-- Pantalla de acceso — registro o inicio de sesión -->
-<div id="auth-gate" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/95 backdrop-blur-sm">
-  <div class="w-full max-w-md glass-card p-8 space-y-6 fade-in">
-    <div class="text-center space-y-2">
+<div id="auth-gate" class="auth-gate fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-950/95 backdrop-blur-sm">
+  <div class="auth-gate-card w-full max-w-md glass-card p-8 space-y-5 fade-in">
+    <div class="text-center space-y-3">
       <div class="logo-glow h-14 w-14 rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center font-bold text-slate-950 text-lg mx-auto">TR</div>
-      <h2 class="text-2xl font-bold tracking-tight">Bienvenido a TechRent</h2>
-      <p class="text-sm text-slate-400">Inicia sesión o crea tu cuenta para alquilar equipos</p>
-      <p class="text-[11px] text-purple-400/80">Vendedores: usa tu correo corporativo (@techrent.com)</p>
+      <div class="space-y-1">
+        <h2 id="auth-welcome" class="text-2xl font-bold tracking-tight text-white">{% trans "Bienvenido a TechRent" %}</h2>
+        <p id="auth-subtitle" class="text-sm text-slate-400 leading-relaxed">{% trans "Inicia sesión o crea tu cuenta para alquilar equipos" %}</p>
+      </div>
     </div>
 
-    <div class="flex rounded-xl bg-slate-900/80 p-1 border border-slate-800">
-      <button type="button" id="auth-tab-login" class="auth-tab flex-1 py-2 text-sm font-medium rounded-lg text-cyan-300 bg-cyan-500/10">Iniciar sesión</button>
-      <button type="button" id="auth-tab-register" class="auth-tab flex-1 py-2 text-sm font-medium rounded-lg text-slate-400">Registrarse</button>
+    <form action="{% url 'set_language' %}" method="post" class="auth-lang-form flex justify-center gap-2 text-xs">
+      {% csrf_token %}
+      <input name="next" type="hidden" value="/" />
+      <button type="submit" name="language" value="es" class="btn-ghost px-3 py-1.5 rounded-md">ES</button>
+      <button type="submit" name="language" value="en" class="btn-ghost px-3 py-1.5 rounded-md">EN</button>
+    </form>
+
+    <div class="auth-tabs flex rounded-xl bg-slate-900/80 p-1 border border-slate-800">
+      <button type="button" id="auth-tab-login" class="auth-tab flex-1 py-2 text-sm font-medium rounded-lg text-cyan-300 bg-cyan-500/10">
+        <span id="auth-tab-login-label">{% trans "Iniciar sesión" %}</span>
+      </button>
+      <button type="button" id="auth-tab-register" class="auth-tab flex-1 py-2 text-sm font-medium rounded-lg text-slate-400">
+        <span id="auth-tab-register-label">{% trans "Registrarse" %}</span>
+      </button>
     </div>
 
-    <form id="form-login" class="space-y-4">
-      <div class="field-group">
-        <input id="login-email" type="email" placeholder=" " required autocomplete="email" />
-        <label for="login-email">Correo electrónico</label>
+    <form id="form-login" class="auth-form" method="post" action="#" novalidate>
+      <p id="auth-login-error" class="auth-error" role="alert"></p>
+      <div class="auth-field">
+        <label id="label-login-email" for="login-email">{% trans "Correo electrónico" %}</label>
+        <input id="login-email" type="email" required autocomplete="email" />
       </div>
-      <button type="submit" class="btn-primary w-full py-3 rounded-xl text-sm font-semibold text-slate-950">Entrar</button>
+      <div class="auth-field">
+        <label id="label-login-password" for="login-password">{% trans "Contraseña" %}</label>
+        <input id="login-password" type="password" required autocomplete="current-password" minlength="6" />
+      </div>
+      <button type="submit" id="btn-login" class="btn-primary auth-submit">
+        <span id="btn-login-label">{% trans "Entrar" %}</span>
+      </button>
     </form>
 
-    <form id="form-register" class="space-y-4 hidden">
-      <div class="field-group">
-        <input id="register-nombre" type="text" placeholder=" " required autocomplete="name" />
-        <label for="register-nombre">Nombre completo</label>
+    <form id="form-register" class="auth-form is-hidden" method="post" action="#" novalidate>
+      <p id="auth-register-error" class="auth-error" role="alert"></p>
+      <div class="auth-field">
+        <label id="label-register-nombre" for="register-nombre">{% trans "Nombre completo" %}</label>
+        <input id="register-nombre" type="text" required autocomplete="name" />
       </div>
-      <div class="field-group">
-        <input id="register-email" type="email" placeholder=" " required autocomplete="email" />
-        <label for="register-email">Correo electrónico</label>
+      <div class="auth-field">
+        <label id="label-register-email" for="register-email">{% trans "Correo electrónico" %}</label>
+        <input id="register-email" type="email" required autocomplete="email" />
       </div>
-      <button type="submit" class="btn-primary w-full py-3 rounded-xl text-sm font-semibold text-slate-950">Crear cuenta</button>
+      <div class="auth-field">
+        <label id="label-register-password" for="register-password">{% trans "Contraseña" %}</label>
+        <input id="register-password" type="password" required autocomplete="new-password" minlength="6" />
+      </div>
+      <button type="submit" id="btn-register" class="btn-primary auth-submit">
+        <span id="btn-register-label">{% trans "Crear cuenta" %}</span>
+      </button>
     </form>
+
+    <p class="auth-staff-hint text-center text-[11px] text-slate-500 leading-relaxed border-t border-slate-800/80 pt-4">
+      {% trans "Demo staff:" %} <span class="text-purple-400/90 font-mono">vendor@techrent.com</span>
+      · {% trans "clave" %} <span class="text-purple-400/90 font-mono">TechRent2026!</span>
+    </p>
   </div>
 </div>

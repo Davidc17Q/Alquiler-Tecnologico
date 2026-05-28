@@ -53,9 +53,6 @@ class AdminDashboardService:
             "alquileres_activos": self._alquileres.count_activos(),
             "pagos_pendientes": self._pagos.count_pendientes(),
             "alquileres_pendientes": self._alquileres.count_pendientes(),
-            "microservicios_online": 4,
-            "microservicios_total": 6,
-            "workers_activos": 2,
             "uso_sistema": min(98, 40 + total_usuarios * 2 + self._alquileres.count_activos() * 3),
         }
 
@@ -94,7 +91,5 @@ class AdminDashboardService:
             "ingresos_mensuales": pad(vals_ing),
             "alquileres_activos": pad([self._alquileres.count_activos()] * 7),
             "pagos_pendientes": pad([self._pagos.count_pendientes()] * 7),
-            "microservicios_online": [4, 4, 4, 3, 4, 4, 4],
-            "workers_activos": [2, 2, 1, 2, 2, 2, 2],
             "uso_sistema": pad([60, 65, 70, 72, 78, 85, min(98, 40 + base * 2)]),
         }

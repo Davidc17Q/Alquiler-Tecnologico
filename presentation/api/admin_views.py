@@ -17,17 +17,14 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from application.exceptions import ApplicationError, NotFoundError
+import os
+
+import redis
+from django.conf import settings
 from django.utils.translation import gettext_lazy as _
-from application.services.admin_dashboard_service import AdminDashboardService
-from application.services.admin_gestion_service import AdminGestionService
+
+from application.exceptions import ApplicationError
 from domain.enums import EquipoEstado
-from infrastructure.repositories.django_repositories import (
-    DjangoAlquilerRepository,
-    DjangoEquipoRepository,
-    DjangoPagoRepository,
-    DjangoUsuarioRepository,
-)
 from presentation.api.mappers import (
     alquiler_detalle_to_dict,
     equipo_to_dict,
@@ -35,24 +32,7 @@ from presentation.api.mappers import (
     usuario_admin_to_dict,
 )
 from presentation.api.session_auth import handle_auth_error, requiere_staff
-
-
-def _dashboard_service() -> AdminDashboardService:
-    return AdminDashboardService(
-        usuario_repository=DjangoUsuarioRepository(),
-        equipo_repository=DjangoEquipoRepository(),
-        alquiler_repository=DjangoAlquilerRepository(),
-        pago_repository=DjangoPagoRepository(),
-    )
-
-
-def _gestion_service() -> AdminGestionService:
-    return AdminGestionService(
-        usuario_repository=DjangoUsuarioRepository(),
-        equipo_repository=DjangoEquipoRepository(),
-        alquiler_repository=DjangoAlquilerRepository(),
-        pago_repository=DjangoPagoRepository(),
-    )
+from presentation.di import build_admin_dashboard_service, build_admin_gestion_service
 
 
 def _staff_guard(request: HttpRequest):
@@ -68,8 +48,9 @@ class AdminDashboardView(APIView):
     def get(self, request: HttpRequest) -> Response:
         if err := _staff_guard(request):
             return err
-        metrics = _dashboard_service().obtener_metricas()
-        metrics["sparklines"] = _dashboard_service().sparklines()
+        svc = build_admin_dashboard_service()
+        metrics = svc.obtener_metricas()
+        metrics["sparklines"] = svc.sparklines()
         return Response(metrics)
 
 
@@ -78,7 +59,7 @@ class AdminAnalyticsView(APIView):
     def get(self, request: HttpRequest) -> Response:
         if err := _staff_guard(request):
             return err
-        return Response(_dashboard_service().obtener_analytics())
+        return Response(build_admin_dashboard_service().obtener_analytics())
 
 
 @method_decorator(csrf_exempt, name="dispatch")
@@ -87,10 +68,11 @@ class AdminClientesView(APIView):
         if err := _staff_guard(request):
             return err
         q = request.GET.get("q", "")
-        clientes = _gestion_service().listar_clientes(q)
+        gestion = build_admin_gestion_service()
+        clientes = gestion.listar_clientes(q)
         data = []
         for u in clientes:
-            alquileres = _gestion_service().alquileres_de_cliente(u.id)
+            alquileres = gestion.alquileres_de_cliente(u.id)
             data.append(
                 usuario_admin_to_dict(
                     u,
@@ -107,7 +89,7 @@ class AdminClienteDetailView(APIView):
         if err := _staff_guard(request):
             return err
         try:
-            usuario = _gestion_service().actualizar_cliente(
+            usuario = build_admin_gestion_service().actualizar_cliente(
                 usuario_id,
                 nombre=request.data.get("nombre"),
                 activo=request.data.get("activo"),
@@ -122,9 +104,9 @@ class AdminClienteDetailView(APIView):
         try:
             alquileres = [
                 alquiler_detalle_to_dict(a)
-                for a in _gestion_service().alquileres_de_cliente(usuario_id)
+                for a in build_admin_gestion_service().alquileres_de_cliente(usuario_id)
             ]
-            pagos = [pago_to_dict(p) for p in _gestion_service().pagos_de_cliente(usuario_id)]
+            pagos = [pago_to_dict(p) for p in build_admin_gestion_service().pagos_de_cliente(usuario_id)]
         except ApplicationError as exc:
             return handle_auth_error(exc)
         return Response({"alquileres": alquileres, "pagos": pagos})
@@ -135,14 +117,14 @@ class AdminEquiposView(APIView):
     def get(self, request: HttpRequest) -> Response:
         if err := _staff_guard(request):
             return err
-        equipos = _gestion_service().listar_equipos()
+        equipos = build_admin_gestion_service().listar_equipos()
         return Response([equipo_to_dict(e) for e in equipos])
 
     def post(self, request: HttpRequest) -> Response:
         if err := _staff_guard(request):
             return err
         try:
-            equipo = _gestion_service().guardar_equipo(
+            equipo = build_admin_gestion_service().guardar_equipo(
                 equipo_id=None,
                 nombre=request.data["nombre"],
                 categoria=request.data["categoria"],
@@ -161,11 +143,13 @@ class AdminEquipoDetailView(APIView):
     def patch(self, request: HttpRequest, equipo_id: int) -> Response:
         if err := _staff_guard(request):
             return err
-        existente = DjangoEquipoRepository().get_by_id(equipo_id)
-        if existente is None:
-            return handle_auth_error(NotFoundError(_("Equipo no encontrado.")))
+        gestion = build_admin_gestion_service()
         try:
-            equipo = _gestion_service().guardar_equipo(
+            existente = gestion.obtener_equipo(equipo_id)
+        except ApplicationError as exc:
+            return handle_auth_error(exc)
+        try:
+            equipo = gestion.guardar_equipo(
                 equipo_id=equipo_id,
                 nombre=request.data.get("nombre", existente.nombre),
                 categoria=request.data.get("categoria", existente.categoria),
@@ -186,7 +170,7 @@ class AdminEquipoDetailView(APIView):
         if err := _staff_guard(request):
             return err
         try:
-            _gestion_service().eliminar_equipo(equipo_id)
+            build_admin_gestion_service().eliminar_equipo(equipo_id)
         except ApplicationError as exc:
             return handle_auth_error(exc)
         return Response(status=204)
@@ -197,7 +181,7 @@ class AdminAlquileresView(APIView):
     def get(self, request: HttpRequest) -> Response:
         if err := _staff_guard(request):
             return err
-        data = [alquiler_detalle_to_dict(a) for a in _gestion_service().listar_alquileres()]
+        data = [alquiler_detalle_to_dict(a) for a in build_admin_gestion_service().listar_alquileres()]
         return Response(data)
 
 
@@ -225,9 +209,9 @@ class AdminInfraView(APIView):
         services = []
         for sid, name, url, color in [
             ("django", "Django Monolith", f"{base}/api/info/", "cyan"),
-            ("flask", "Flask Microservice", f"{base}/api/equipos/disponibles", "purple"),
+            ("flask", "Flask Equipos MS", f"{base}/api/equipos/disponibles", "purple"),
             ("nginx", "Nginx Gateway", f"{base}/", "blue"),
-            ("pagos", "Pagos MS", f"{base}/api/v2/pagos/", "amber"),
+            ("pagos", "Pagos MS", f"{base}/api/v2/health", "amber"),
         ]:
             estado, latencia = _probe(url)
             services.append(
@@ -235,60 +219,66 @@ class AdminInfraView(APIView):
                     "id": sid,
                     "nombre": name,
                     "estado": estado,
-                    "latencia_ms": latencia or random.randint(12, 48),
-                    "cpu_mock": random.randint(18, 65),
-                    "memoria_mock": random.randint(32, 78),
+                    "latencia_ms": latencia,
+                    "metricas_simuladas": True,
+                    "cpu_pct": random.randint(18, 65),
+                    "memoria_pct": random.randint(32, 78),
                     "color": color,
                     "logs": [
-                        f"[{estado}] health check {url}",
-                        f"latency={latencia}ms",
+                        f"[{estado}] GET {url}",
+                        f"latency={latencia}ms (real)",
                     ],
                 }
             )
 
-        redis_ok = random.choice([True, True, True, False])
-        celery_ok = random.choice([True, True, False])
-        for sid, name, estado, color in [
-            ("redis", "Redis Broker", "ONLINE" if redis_ok else "OFFLINE", "rose"),
-            ("celery", "Celery Worker", "ONLINE" if celery_ok else "DEGRADED", "emerald"),
+        redis_estado, redis_ms = "OFFLINE", 0
+        try:
+            r = redis.from_url(os.environ.get("REDIS_URL", settings.CELERY_BROKER_URL))
+            r.ping()
+            redis_estado, redis_ms = "ONLINE", 5
+        except Exception as exc:
+            redis_estado = "OFFLINE"
+            redis_log = str(exc)
+        else:
+            redis_log = "PONG"
+
+        celery_estado = "DEGRADED"
+        celery_log = "Sin workers activos detectados"
+        try:
+            from config.celery import app as celery_app
+
+            insp = celery_app.control.inspect(timeout=1.0)
+            activos = insp.active() if insp else None
+            if activos:
+                celery_estado = "ONLINE"
+                celery_log = f"Workers: {', '.join(activos.keys())}"
+        except Exception as exc:
+            celery_log = str(exc)
+
+        for sid, name, estado, latencia, color, log in [
+            ("redis", "Redis Broker", redis_estado, redis_ms, "rose", redis_log),
+            ("celery", "Celery Worker", celery_estado, 12, "emerald", celery_log),
         ]:
             services.append(
                 {
                     "id": sid,
                     "nombre": name,
                     "estado": estado,
-                    "latencia_ms": random.randint(2, 15),
-                    "cpu_mock": random.randint(10, 40),
-                    "memoria_mock": random.randint(20, 55),
+                    "latencia_ms": latencia,
+                    "metricas_simuladas": sid == "celery" and celery_estado != "ONLINE",
+                    "cpu_pct": random.randint(10, 40) if sid == "celery" else 25,
+                    "memoria_pct": random.randint(20, 55) if sid == "redis" else 40,
                     "color": color,
-                    "logs": [f"[{estado}] broker heartbeat ok"],
+                    "logs": [f"[{estado}] {log}"],
                 }
             )
 
         online = sum(1 for s in services if s["estado"] == "ONLINE")
-        return Response({"servicios": services, "online": online, "total": len(services)})
-
-
-@method_decorator(csrf_exempt, name="dispatch")
-class AdminWorkersView(APIView):
-    def get(self, request: HttpRequest) -> Response:
-        if err := _staff_guard(request):
-            return err
         return Response(
             {
-                "colas": [
-                    {"nombre": "default", "pendientes": random.randint(0, 5), "activas": random.randint(0, 2)},
-                    {"nombre": "notificaciones", "pendientes": random.randint(0, 3), "activas": 0},
-                ],
-                "tareas_recientes": [
-                    {"id": "tsk-8841", "nombre": "notificar_alquiler_creado", "estado": "SUCCESS", "duracion_ms": 124},
-                    {"id": "tsk-8840", "nombre": "sync_inventario_flask", "estado": "SUCCESS", "duracion_ms": 89},
-                    {"id": "tsk-8839", "nombre": "reporte_diario_ingresos", "estado": "PENDING", "duracion_ms": 0},
-                ],
-                "logs": [
-                    "[celery@worker] ready.",
-                    "[redis] connected localhost:6379",
-                    "Task notificar_alquiler_creado succeeded in 0.12s",
-                ],
+                "servicios": services,
+                "online": online,
+                "total": len(services),
+                "nota": "CPU/RAM son métricas simuladas para visualización; latencia y estado HTTP son reales.",
             }
         )

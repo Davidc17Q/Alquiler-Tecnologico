@@ -3,9 +3,7 @@ services:
   django:
     build: .
     container_name: alquiler_django
-    command: >
-      sh -c "python manage.py migrate --noinput &&
-             python manage.py runserver 0.0.0.0:8000"
+    command: ["/app/scripts/docker-entrypoint.sh"]
     env_file:
       - .env
     environment:
@@ -42,6 +40,13 @@ services:
   flask_service:
     build: ./flask_service
     container_name: alquiler_flask
+    environment:
+      SQLITE_PATH: /data/db.sqlite3
+    volumes:
+      - sqlite_data:/data
+    depends_on:
+      django:
+        condition: service_healthy
     expose:
       - "5000"
     ports:
