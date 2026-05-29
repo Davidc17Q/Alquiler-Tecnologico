@@ -231,6 +231,20 @@ const TechRentAdmin = (function () {
         labels: Object.keys(est),
         datasets: [{ data: Object.values(est), backgroundColor: ["#fbbf24", "#34d399", "#64748b"] }],
       },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: "right",
+            labels: {
+              color: fontColor,
+              boxWidth: 12,
+              font: { size: 11 }
+            }
+          }
+        }
+      }
     });
   }
 
