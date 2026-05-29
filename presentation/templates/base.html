@@ -31,7 +31,13 @@
     {% block extra_head %}{% endblock %}
   </head>
   <body class="h-full antialiased">
-    <div class="ambient-bg"></div>
+    <div class="ambient-bg">
+      <div class="ambient-bg-glows">
+        <div class="glow-blob glow-cyan"></div>
+        <div class="glow-blob glow-purple"></div>
+        <div class="glow-blob glow-blue"></div>
+      </div>
+    </div>
     {% include "components/auth_gate.html" %}
 
     <div id="app-shell" class="hidden relative z-10 flex h-screen overflow-hidden">

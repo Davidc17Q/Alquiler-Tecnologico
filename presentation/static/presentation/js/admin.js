@@ -3,6 +3,27 @@
  */
 const TechRentAdmin = (function () {
   const API = { v1: "/api/v1" };
+  const CATEGORIA_IMGS = {
+    Laptop: "https://images.unsplash.com/photo-1496181130204-755241524eab?w=120&auto=format&fit=crop&q=80",
+    Tablet: "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=120&auto=format&fit=crop&q=80",
+    Cámara: "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=120&auto=format&fit=crop&q=80",
+    Smartphone: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=120&auto=format&fit=crop&q=80",
+    Drone: "https://images.unsplash.com/photo-1527977966376-1c8408f9f108?w=120&auto=format&fit=crop&q=80",
+    "VR/AR": "https://images.unsplash.com/photo-1593508512255-86ab42a8e620?w=120&auto=format&fit=crop&q=80",
+    Consola: "https://images.unsplash.com/photo-1605901309584-818e25960a8f?w=120&auto=format&fit=crop&q=80",
+    Proyector: "https://images.unsplash.com/photo-1535016120720-40c646be5580?w=120&auto=format&fit=crop&q=80",
+    Monitor: "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=120&auto=format&fit=crop&q=80",
+    Periférico: "https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=120&auto=format&fit=crop&q=80",
+    Audio: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=120&auto=format&fit=crop&q=80",
+    Streaming: "https://images.unsplash.com/photo-1478737270239-2f02b77fc618?w=120&auto=format&fit=crop&q=80",
+    Redes: "https://images.unsplash.com/photo-1544197150-b99a580bb7a8?w=120&auto=format&fit=crop&q=80",
+    Almacenamiento: "https://images.unsplash.com/photo-1563132337-f159f484226c?w=120&auto=format&fit=crop&q=80",
+    Impresión: "https://images.unsplash.com/photo-1612815154858-60aa4c59eaa6?w=120&auto=format&fit=crop&q=80",
+    Electrónica: "https://images.unsplash.com/photo-1608564697071-ddf911d81370?w=120&auto=format&fit=crop&q=80",
+    Diseño: "https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?w=120&auto=format&fit=crop&q=80",
+    Desktop: "https://images.unsplash.com/photo-1547082299-de196ea013d6?w=120&auto=format&fit=crop&q=80",
+    Otros: "https://images.unsplash.com/photo-1526738549149-8e07eca6c147?w=120&auto=format&fit=crop&q=80",
+  };
   const state = {
     user: null,
     metrics: null,
@@ -305,7 +326,9 @@ const TechRentAdmin = (function () {
     const items = cat === "all" ? state.equipos : state.equipos.filter((e) => e.categoria === cat);
     grid.innerHTML = items.map((e) => `
       <article class="admin-equipo-card" data-id="${e.id}">
-        <div class="admin-equipo-thumb"><i data-lucide="laptop" class="w-8 h-8 text-cyan-400/60"></i></div>
+        <div class="admin-equipo-thumb">
+          <img src="${CATEGORIA_IMGS[e.categoria] || CATEGORIA_IMGS.Otros}" class="w-full h-full object-cover" alt="${escapeHtml(e.nombre)}" onerror="this.src='https://images.unsplash.com/photo-1526738549149-8e07eca6c147?w=120&auto=format&fit=crop&q=80';">
+        </div>
         <div class="p-4 space-y-2">
           <div class="flex justify-between gap-2">
             <h4 class="font-semibold text-sm truncate">${escapeHtml(e.nombre)}</h4>

@@ -592,6 +592,28 @@ const CATEGORIA_META = {
   Otros: { icon: "package", color: "blue" },
 };
 
+const CATEGORIA_IMGS = {
+  Laptop: "https://images.unsplash.com/photo-1496181130204-755241524eab?w=120&auto=format&fit=crop&q=80",
+  Tablet: "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=120&auto=format&fit=crop&q=80",
+  Cámara: "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=120&auto=format&fit=crop&q=80",
+  Smartphone: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=120&auto=format&fit=crop&q=80",
+  Drone: "https://images.unsplash.com/photo-1527977966376-1c8408f9f108?w=120&auto=format&fit=crop&q=80",
+  "VR/AR": "https://images.unsplash.com/photo-1593508512255-86ab42a8e620?w=120&auto=format&fit=crop&q=80",
+  Consola: "https://images.unsplash.com/photo-1605901309584-818e25960a8f?w=120&auto=format&fit=crop&q=80",
+  Proyector: "https://images.unsplash.com/photo-1535016120720-40c646be5580?w=120&auto=format&fit=crop&q=80",
+  Monitor: "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=120&auto=format&fit=crop&q=80",
+  Periférico: "https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=120&auto=format&fit=crop&q=80",
+  Audio: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=120&auto=format&fit=crop&q=80",
+  Streaming: "https://images.unsplash.com/photo-1478737270239-2f02b77fc618?w=120&auto=format&fit=crop&q=80",
+  Redes: "https://images.unsplash.com/photo-1544197150-b99a580bb7a8?w=120&auto=format&fit=crop&q=80",
+  Almacenamiento: "https://images.unsplash.com/photo-1563132337-f159f484226c?w=120&auto=format&fit=crop&q=80",
+  Impresión: "https://images.unsplash.com/photo-1612815154858-60aa4c59eaa6?w=120&auto=format&fit=crop&q=80",
+  Electrónica: "https://images.unsplash.com/photo-1608564697071-ddf911d81370?w=120&auto=format&fit=crop&q=80",
+  Diseño: "https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?w=120&auto=format&fit=crop&q=80",
+  Desktop: "https://images.unsplash.com/photo-1547082299-de196ea013d6?w=120&auto=format&fit=crop&q=80",
+  Otros: "https://images.unsplash.com/photo-1526738549149-8e07eca6c147?w=120&auto=format&fit=crop&q=80",
+};
+
 let equiposFiltroCategoria = "all";
 let equiposBusqueda = "";
 
@@ -623,11 +645,12 @@ function renderEquipoRow(e) {
   const rawNombre = e.nombre || "";
   const nombre = escapeHtml(rawNombre);
   const searchKey = rawNombre.toLowerCase().replace(/"/g, "");
+  const imgUrl = CATEGORIA_IMGS[e.categoria] || CATEGORIA_IMGS.Otros;
   return `
     <tr class="equipo-row-compact border-t border-slate-800/60" data-nombre="${searchKey}">
       <td class="py-2 px-4">
         <div class="flex items-center gap-2.5 min-w-[180px]">
-          <div class="h-8 w-8 rounded-lg bg-gradient-to-br from-cyan-500/15 to-purple-500/15 flex items-center justify-center text-[10px] font-bold text-cyan-300 shrink-0">${avatarInitials(e.nombre)}</div>
+          <img src="${imgUrl}" class="h-8 w-8 rounded-lg object-cover border border-slate-700/65 shadow-sm shrink-0" alt="${nombre}" onerror="this.src='https://images.unsplash.com/photo-1526738549149-8e07eca6c147?w=120&auto=format&fit=crop&q=80';">
           <div class="min-w-0">
             <p class="font-medium text-slate-100 truncate text-sm">${nombre}</p>
             <p class="text-[10px] text-slate-500 font-mono">ID ${idLabel}</p>
